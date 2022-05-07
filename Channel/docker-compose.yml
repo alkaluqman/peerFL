@@ -1,0 +1,10 @@
+version: '2'
+services:
+    server:
+        build: ./server/
+        environment:
+            - ZMQ_ADDRESS=tcp://*:5555
+    client:
+        build: ./client/
+        environment:
+            - ZMQ_ADDRESS=tcp://server:5555
