@@ -75,18 +75,21 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def load_client_dataset(client_num):
-    basepath = os.path.join(os.getcwd(), "all_data")
-    client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+def load_client_dataset():
+    # basepath = os.path.join(os.getcwd(), "all_data")
+    # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+    client_path = "/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
 
 
-if __name__ == '__main__':
-    # Load client dataset client number comes from environment
-    client_num = 1
-    local_dataset = load_client_dataset(client_num)
+# if __name__ == '__main__':
+def local_training(client_num):
+    # Load client dataset from volume mounted folder
+    # client_num = 1
+    log_prefix = "[" + str(client_num).upper() + "] "
+    local_dataset = load_client_dataset()
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
@@ -99,19 +102,20 @@ if __name__ == '__main__':
     metrics = ['accuracy']
     optimizer = SGD(lr=lr, decay=lr, momentum=0.9)
 
-    print("[INFO] Building model ...")
+    print("%sBuilding model ..." % log_prefix)
     smlp_local = SimpleMLP()
     local_model = smlp_local.build(shape=input_shape, classes=num_classes)
     local_model.compile(loss=loss,
                   optimizer=optimizer,
                   metrics=metrics)
     local_model.build(input_shape=(None, x, y, z))
-    print("[INFO] Training model ...")
+    print("%sTraining model ..." % log_prefix)
     # Training
     # local_model.set_weights(global_model.get_weights())
     local_model.fit(local_dataset, epochs=2, verbose=1)
-    print("[INFO] Done")
+    print("%sDone" % log_prefix)
 
     # Save model
-    model_filename = "client_"+str(client_num)+".pkl"
+    model_filename = "/usr/thisdocker/dataset/"+str(client_num)+".pkl"
     joblib.dump(local_model, model_filename)
+    return local_model
