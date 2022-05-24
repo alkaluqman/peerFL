@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 from sklearn.metrics import accuracy_score
+import numpy as np
 
 tf.config.set_visible_devices([], 'GPU')
 from tensorflow.keras import backend as K
@@ -86,16 +87,17 @@ def test_model(X_test, Y_test, model, comm_round):
     return acc, loss
 
 
-def load_client_dataset(client_num):
-    basepath = os.path.join(os.getcwd(), "all_data")
-    client_path = os.path.join(basepath, "saved_data_"+str(client_num))
+def load_client_dataset():
+    # basepath = os.path.join(os.getcwd(), "all_data")
+    # client_path = os.path.join(basepath, "saved_data_"+str(client_num))
+    client_path = "/usr/thisdocker/testset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
 
-if __name__ == '__main__':
+def eval_on_test_set(averaged_model):
     # Load client test set
-    local_dataset = load_client_dataset('test')
+    local_dataset = load_client_dataset()
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
@@ -103,10 +105,41 @@ if __name__ == '__main__':
     num_classes = local_dataset.element_spec[1].shape[1]
 
     #Load trained model
-    client_num = 1
-    model_filename = "client_" + str(client_num) + ".pkl"
-    local_model = joblib.load(model_filename)
+    # client_num = 1
+    # model_filename = "client_" + str(client_num) + ".pkl"
+    # local_model = joblib.load(model_filename)
 
     #test the SGD global model and print out metrics
     for(X_test, Y_test) in local_dataset:
-        SGD_acc, SGD_loss = test_model(X_test, Y_test, local_model, 1)
+        SGD_acc, SGD_loss = test_model(X_test, Y_test, averaged_model, 1)
+
+def FedAvg(model_dict):
+    #Global model creation
+    smlp_global = SimpleMLP()
+    comms_round = 2 #10
+    lr = 0.01
+    loss = 'categorical_crossentropy'
+    metrics = ['accuracy']
+    optimizer = SGD(lr=lr, decay=lr / comms_round, momentum=0.9)
+    global_model = smlp_global.build((32,32,3), 10)
+    global_model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
+    global_model.build(input_shape=(None, 32, 32, 3))
+
+    average_weights = global_model.get_weights()
+    average_weights = np.array(average_weights)
+
+    average_weights.fill(0)
+
+    for client, local_model in model_dict.items():
+        weights = local_model.get_weights()
+        weights = np.array(weights)
+        average_weights = np.add(average_weights, weights)
+
+    average_weights = average_weights / len(model_dict)
+    average_weights = average_weights.tolist()
+    global_model.set_weights(average_weights)
+
+    #evaluation accuracy
+    eval_on_test_set(global_model)
+
+    return global_model
