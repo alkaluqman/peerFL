@@ -28,18 +28,20 @@ def receivePacket(socket, dtype = np.int64):
 cmd =ns.core.CommandLine()
 cmd.nodes = 10
 cmd.recv = 2
+cmd.sndr = 0
 cmd.AddValue("nodes", "Number of csma Nodes")
 cmd.AddValue("recv", "Index of client(0-Indexed)")
+cmd.AddValue("sndr", "Index of client(0-Indexed)")
 cmd.Parse(sys.argv)
 
 numNodes = int(cmd.nodes)
 receiver = int(cmd.recv)
+sender = int(cmd.sndr)
 
-ApNode = ns.network.NodeContainer()
-ApNode.Create(1)
+assert sender != receiver, "Sender and Receiver cant be same."
 
-StaNodes = ns.network.NodeContainer()
-StaNodes.Create(numNodes-1)
+Nodes = ns.network.NodeContainer()
+Nodes.Create(numNodes)
 
 ### Channel and Devices
 
@@ -49,19 +51,15 @@ Phy = ns.wifi.YansWifiPhyHelper.Default()
 Channel = ns.wifi.YansWifiChannelHelper.Default()
 Phy.SetChannel(Channel.Create())
 
-ssid = ns.wifi.Ssid("wifi-default")
+ssid = ns.wifi.Ssid("ns-3-ssid")
 wifi.SetRemoteStationManager("ns3::ArfWifiManager")
 Mac = ns.wifi.WifiMacHelper()
 
 # setup stas.
 
-#Mac.SetType("ns3::StaWifiMac",
-#                "Ssid", ns.wifi.SsidValue(ssid), "ActiveProbing", ns.core.BooleanValue(False))
-StaDevices = wifi.Install(Phy, Mac, StaNodes)
 
-#Mac.SetType("ns3::ApWifiMac",
-#                "Ssid", ns.wifi.SsidValue(ssid))
-ApDevice = wifi.Install(Phy, Mac, ApNode)
+Mac.SetType("ns3::AdhocWifiMac")
+Devices = wifi.Install(Phy, Mac, Nodes)
 
 ### Mobility
 
@@ -69,32 +67,28 @@ mobility = ns.mobility.MobilityHelper()
 mobility.SetPositionAllocator ("ns3::GridPositionAllocator", "MinX", ns.core.DoubleValue(0.0), 
 								"MinY", ns.core.DoubleValue (0.0), "DeltaX", ns.core.DoubleValue(5.0), "DeltaY", ns.core.DoubleValue(10.0), 
                                  "GridWidth", ns.core.UintegerValue(3), "LayoutType", ns.core.StringValue("RowFirst"))
-mobility.Install(StaNodes)
+mobility.Install(Nodes)
 
-mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel")
-mobility.Install(ApNode)
 ### Stack and Address
 
 stack = ns.internet.InternetStackHelper()
-stack.Install(ApNode)
-stack.Install(StaNodes)
+stack.Install(Nodes)
 
 address = ns.internet.Ipv4AddressHelper()
 address.SetBase(
-    ns.network.Ipv4Address("10.1.2.0"),
+    ns.network.Ipv4Address("10.1.1.0"),
     ns.network.Ipv4Mask("255.255.255.0")
 )
-ApInterfaces = address.Assign(ApDevice)
-StaInterface = address.Assign(StaDevices)
+StaInterface = address.Assign(Devices)
 ### Setting Source and Sink
 
 source = ns.network.Socket.CreateSocket(
-    ApNode.Get(0),
+    Nodes.Get(sender),
     ns.core.TypeId.LookupByName("ns3::UdpSocketFactory")
 )
 
 sink = ns.network.Socket.CreateSocket(
-    StaNodes.Get(receiver),
+    Nodes.Get(receiver),
     ns.core.TypeId.LookupByName("ns3::UdpSocketFactory")
 )
 
