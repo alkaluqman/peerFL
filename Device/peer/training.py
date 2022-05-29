@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import tensorflow as tf
-tf.config.set_visible_devices([], 'GPU')
+# tf.config.set_visible_devices([], 'GPU')
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D
@@ -75,43 +75,44 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def load_client_dataset(client_num):
-    basepath = os.path.join(os.getcwd(), "all_data")
-    client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+def load_client_dataset():
+    # basepath = os.path.join(os.getcwd(), "all_data")
+    # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+    client_path = "/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
 
 
-if __name__ == '__main__':
-    # Load client dataset client number comes from environment
-    client_num = 1
-    local_dataset = load_client_dataset(client_num)
+# if __name__ == '__main__':
+def local_training(client_num, local_model, build_flag):
+    # Load client dataset from volume mounted folder
+    # client_num = 1
+    log_prefix = "[" + str(client_num).upper() + "] "
+    local_dataset = load_client_dataset()
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
     input_shape = (x, y, z)
     num_classes = local_dataset.element_spec[1].shape[1]
 
-    # Create model
-    lr = 0.01
-    loss = 'categorical_crossentropy'
-    metrics = ['accuracy']
-    optimizer = SGD(lr=lr, decay=lr, momentum=0.9)
+    if build_flag:
+        # Create model
+        lr = 0.01
+        loss = 'categorical_crossentropy'
+        metrics = ['accuracy']
+        optimizer = SGD(lr=lr, decay=lr, momentum=0.9)
 
-    print("[INFO] Building model ...")
-    smlp_local = SimpleMLP()
-    local_model = smlp_local.build(shape=input_shape, classes=num_classes)
-    local_model.compile(loss=loss,
-                  optimizer=optimizer,
-                  metrics=metrics)
-    local_model.build(input_shape=(None, x, y, z))
-    print("[INFO] Training model ...")
+        print("%sBuilding model ..." % log_prefix)
+        smlp_local = SimpleMLP()
+        local_model = smlp_local.build(shape=input_shape, classes=num_classes)
+        local_model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
+        local_model.build(input_shape=(None, x, y, z))
+
+    print("%sTraining model ..." % log_prefix)
     # Training
-    # local_model.set_weights(global_model.get_weights())
-    local_model.fit(local_dataset, epochs=2, verbose=1)
-    print("[INFO] Done")
+    local_model.fit(local_dataset, epochs=1, verbose=1)
+    print("%sDone" % log_prefix)
 
-    # Save model
-    model_filename = "client_"+str(client_num)+".pkl"
-    joblib.dump(local_model, model_filename)
+    # Save model - moved to node
+    return local_model

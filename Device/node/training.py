@@ -1,8 +1,7 @@
+import numpy as np
 import os
 import tensorflow as tf
-from sklearn.metrics import accuracy_score
-
-tf.config.set_visible_devices([], 'GPU')
+# tf.config.set_visible_devices([], 'GPU')
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D
@@ -76,37 +75,45 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def test_model(X_test, Y_test, model, comm_round):
-    cce = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-    logits = model.predict(X_test)
-    loss = cce(Y_test, logits)
-    acc = accuracy_score(tf.argmax(logits, axis=1), tf.argmax(Y_test, axis=1))
-    print("[INFO] Accuracy = {:.3%}".format(acc))
-    print("[INFO] Loss = {}".format(loss))
-    return acc, loss
-
-
-def load_client_dataset(client_num):
-    basepath = os.path.join(os.getcwd(), "all_data")
-    client_path = os.path.join(basepath, "saved_data_"+str(client_num))
+def load_client_dataset():
+    # basepath = os.path.join(os.getcwd(), "all_data")
+    # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+    client_path = "/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
 
-if __name__ == '__main__':
-    # Load client test set
-    local_dataset = load_client_dataset('test')
+
+# if __name__ == '__main__':
+def local_training(client_num):
+    # Load client dataset from volume mounted folder
+    # client_num = 1
+    log_prefix = "[" + str(client_num).upper() + "] "
+    local_dataset = load_client_dataset()
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
     input_shape = (x, y, z)
     num_classes = local_dataset.element_spec[1].shape[1]
 
-    #Load trained model
-    client_num = 1
-    model_filename = "client_" + str(client_num) + ".pkl"
-    local_model = joblib.load(model_filename)
+    # Create model
+    lr = 0.01
+    loss = 'categorical_crossentropy'
+    metrics = ['accuracy']
+    optimizer = SGD(lr=lr, decay=lr, momentum=0.9)
 
-    #test the SGD global model and print out metrics
-    for(X_test, Y_test) in local_dataset:
-        SGD_acc, SGD_loss = test_model(X_test, Y_test, local_model, 1)
+    print("%sBuilding model ..." % log_prefix)
+    smlp_local = SimpleMLP()
+    local_model = smlp_local.build(shape=input_shape, classes=num_classes)
+    local_model.compile(loss=loss,
+                  optimizer=optimizer,
+                  metrics=metrics)
+    local_model.build(input_shape=(None, x, y, z))
+    print("%sTraining model ..." % log_prefix)
+    # Training
+    # local_model.set_weights(global_model.get_weights())
+    local_model.fit(local_dataset, epochs=2, verbose=1)
+    print("%sDone" % log_prefix)
+
+    # Save model - moved to node
+    return local_model
