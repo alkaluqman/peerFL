@@ -4,11 +4,12 @@ import zmq_helper
 import json, joblib
 import ast
 import training, inference
+import ns_helper
 
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
 
-    def __init__(self, context, node_id, peers):
+    def __init__(self, context, node_id, peers, ns = False):
         self.context = context
         self.node_id = node_id
         self.peers = peers
@@ -18,6 +19,28 @@ class Node:
         self.local_model = None  # local model
         self.local_history = None
         self.initialize_node()
+        self.ns = ns
+        if ns:
+            self.Nodes = None
+            self.Interfaces = None
+            self.Devices = None
+            self.Initializer  = None
+
+
+    def ns_initialize_nodes(self, numNodes):
+        """
+        Intiailizes the topology 
+        """
+        initializer = ns_helper.ns_initializer(numNodes)
+        Nodes = initializer.createNodes()
+        Interface = initializer.createInterface()
+        self.Nodes = Nodes
+        self.Interfaces = Interface
+        self.Initializer = initializer
+
+    def ns_initilize_source(self, from_node = 0):
+         return self.Initializer.createSource(from_node)
+
 
     def initialize_node(self):
         """Creates one zmq.ROUTER socket as incoming connection and n number
@@ -47,17 +70,32 @@ class Node:
         self.local_model = joblib.load(model_filename)
 
     def send_model(self, to_node):
-        try:
-            zmq_helper.send_zipped_pickle(self.out_connection[to_node], self.local_model)
-            # self.out_connection[to_node].send_string(self.local_model)
-        except Exception as e:
-            print("%sERROR establishing socket for to-node" % self.log_prefix)
+        if not self.ns:
+            try:
+                zmq_helper.send_zipped_pickle(self.out_connection[to_node], self.local_model)
+                # self.out_connection[to_node].send_string(self.local_model)
+            except Exception as e:
+                print("%sERROR establishing socket for to-node" % self.log_prefix)
+        else:
+            sink = self.Initializer.createSink(to_node)
+            source = self.ns_initilize_source()
+            sinkAddress, anyAddress = self.Initializer.createSocketAddress()
+            self.Helper = ns_helper.nsHelper(sink, source)
+            self.Helper.act_as_client()
+            self.Helper.act_as_server(sinkAddress = sinkAddress)
+            self.Helper.buffer = self.local_model
 
     def receive_model(self):
-        from_node = self.in_connection.recv(0)  # Reads identity
-        self.local_model = zmq_helper.recv_zipped_pickle(self.in_connection)  # Reads model object
-        # self.local_model = self.in_connection.recv_string()
-        return from_node
+        if not self.ns:
+            from_node = self.in_connection.recv(0)  # Reads identity
+            self.local_model = zmq_helper.recv_zipped_pickle(self.in_connection)  # Reads model object
+            # self.local_model = self.in_connection.recv_string()
+            return from_node
+        else:
+            self.Helper.simulation_run()
+            self.Helper.simulation_end()
+
+            return self.Helper.RecvData
 
     def training_step(self, step):
         # local model training

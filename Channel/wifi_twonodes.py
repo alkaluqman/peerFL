@@ -117,7 +117,7 @@ ssid = ns.wifi.Ssid ("ns-3-ssid")
 mac.SetType ("ns3::StaWifiMac", "Ssid", ns.wifi.SsidValue(ssid), "ActiveProbing", ns.core.BooleanValue(False))
 wifi1StaDevices = wifi.Install(phy1, mac, wifi1StaNodes)
 
-mac.SetType("ns3::ApWifiMac","Ssid", ns.wifi.SsidValue (ssid))
+mac.SetType("ns3::ApWifiMac","Ssid", ns.wifi.SsidValue(ssid))
 wifi1ApDevices = wifi.Install(phy1, mac, wifi1ApNode)
 
 # Control mobility of wifi devices
@@ -168,7 +168,7 @@ clientApps = echoClient.Install(wifi1StaNodes.Get(nWifi1 - 1))
 clientApps.Start(ns.core.Seconds(2.0))
 clientApps.Stop(ns.core.Seconds(10.0))
 
-ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
+ns.internet.Ipv4GlobalRoutingHelper.Populatewifi.SetRemoteStationManager("ns3::AarfWifiManager").RoutingTables()
 
 ns.core.Simulator.Stop(ns.core.Seconds(10.0))
 
