@@ -84,7 +84,7 @@ class nsHelper():
         self.sink = sink
         self.source = source
         self.RecvData = None
-        self.buffer = buffer
+        self.buffer = pickle.dumps(buffer)
         self.size = size
 
     def act_as_client(self, address = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)):

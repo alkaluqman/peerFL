@@ -5,7 +5,7 @@ import pickle
 ### Data
 
 buffer = np.arange(3)
-buffer = pickle.dumps(buffer)
+
 numNodes = 10
 ### Creating Nodes
 Initializer = ns_helper.ns_initializer(numNodes)
