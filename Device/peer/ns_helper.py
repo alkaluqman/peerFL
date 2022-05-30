@@ -80,12 +80,12 @@ class ns_initializer():
         return sinkAddress, anyAddress
     
 class nsHelper():
-    def __init__(self, sink, source):
+    def __init__(self, sink, source, buffer, size = 1024):
         self.sink = sink
         self.source = source
         self.RecvData = None
-        self.buffer = None
-        self.size = 2**15
+        self.buffer = buffer
+        self.size = size
 
     def act_as_client(self, address = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)):
         self.sink.Bind(address)
@@ -93,7 +93,7 @@ class nsHelper():
     def act_as_server(self, sinkAddress):
         self.source.Connect(sinkAddress)
     
-    def sendPacket(socket, self):
+    def sendPacket(self, socket):
         print("Sending", ns.core.Simulator.Now())
         socket.Send(ns.network.Packet(str(self.buffer)[2:-1], self.size))
     
@@ -107,6 +107,7 @@ class nsHelper():
         ns.core.Simulator.Schedule(
         ns.core.Seconds(time), self.sendPacket, self.source, 
         )
+        ns.core.Simulator.Run()
     
     def simulation_end(self):
         ns.core.Simulator.Destroy()
