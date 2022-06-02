@@ -80,11 +80,11 @@ class ns_initializer():
         return sinkAddress, anyAddress
     
 class nsHelper():
-    def __init__(self, sink, source, buffer, size = 1024):
+    def __init__(self, sink, source, size = 1024):
         self.sink = sink
         self.source = source
-        self.RecvData = None
-        self.buffer = pickle.dumps(buffer)
+        self.RecvData = []
+        #self.buffer = buffer
         self.size = size
 
     def act_as_client(self, address = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)):
@@ -93,20 +93,40 @@ class nsHelper():
     def act_as_server(self, sinkAddress):
         self.source.Connect(sinkAddress)
     
-    def sendPacket(self, socket):
-        print("Sending", ns.core.Simulator.Now())
-        socket.Send(ns.network.Packet(str(self.buffer)[2:-1], self.size))
+    def makePackets(self, data):
+        data = str(pickle.dumps(data))[2:-1]
+        self.split_data = [data[i:i+self.size] for i in range(0, len(data), self.size)]
+        self.numPackets = len(self.split_data)
+
+    def sendPacket(self, socket, time = 1, i = 0):
+        if self.numPackets>0:
+            print("Sending", ns.core.Simulator.Now())
+            socket.Send(ns.network.Packet(self.split_data[i], self.size))
+            self.numPackets -= 1
+            ns.core.Simulator.Schedule(
+                ns.core.Seconds(time), self.sendPacket, self.source, time, i+1 
+            )
+        else:
+            socket.Close()
+            
     
     def receivePacket(self, socket):
         print("Recieving", ns.core.Simulator.Now())
-        tmp = socket.Recv().GetString().encode().decode("unicode_escape").encode("raw_unicode_escape")
-        self.RecvData = pickle.loads(tmp)
+        tmp = socket.Recv().GetString()
+        self.RecvData.append(tmp)
 
-    def simulation_run(self, time = 0.0):
-        self.sink.SetRecvCallback(self.receivePacket)
+    def getRecvData(self):
+        self.RecvData = [self.RecvData[i][:len(item)] for i, item in enumerate(self.split_data)]
+
+        return pickle.loads("".join(self.RecvData).encode().decode("unicode_escape").encode("raw_unicode_escape"))
+
+    def simulation_run(self, time = 10):
+        
         ns.core.Simulator.Schedule(
-        ns.core.Seconds(time), self.sendPacket, self.source, 
-        )
+                ns.core.Seconds(0.0), self.sendPacket, self.source, 1.0, 0 
+            )
+        
+        self.sink.SetRecvCallback(self.receivePacket)
         ns.core.Simulator.Run()
     
     def simulation_end(self):
