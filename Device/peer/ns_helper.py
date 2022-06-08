@@ -5,6 +5,7 @@ import ns.mobility
 import ns.network
 import ns.wifi
 import pickle
+import sys
 
 class ns_initializer():
     def __init__(self, numNodes, mobility = True, address = "10.1.1.0"):
@@ -80,12 +81,14 @@ class ns_initializer():
         return sinkAddress, anyAddress
     
 class nsHelper():
-    def __init__(self, sink, source, size = 1024):
+    def __init__(self, sink, source, size = 1024, verbose = False):
         self.sink = sink
         self.source = source
         self.RecvData = []
         #self.buffer = buffer
         self.size = size
+        self.i = 0
+        self.verbose = verbose
 
     def act_as_client(self, address = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)):
         self.sink.Bind(address)
@@ -95,37 +98,58 @@ class nsHelper():
     
     def makePackets(self, data):
         data = str(pickle.dumps(data))[2:-1]
-        self.split_data = [data[i:i+self.size] for i in range(0, len(data), self.size)]
-        self.numPackets = len(self.split_data)
 
-    def sendPacket(self, socket, time = 1, i = 0):
+        size = sys.getsizeof(data)
+        self.numPackets = int(size/self.size)
+        p = ns.network.Packet(data, size)
+
+        self.packets=[]
+        for i,start in enumerate(range(0, size, self.size)):
+            if(i<self.numPackets):
+                self.packets.append(p.CreateFragment(start, self.size))
+        self.packets.append(p.CreateFragment(start, size-start))
+
+
+        #self.split_data = [data[i:i+self.size] for i in range(0, len(data), self.size)]
+        self.numPackets = len(self.packets)
+    
+    def sendPacket(self, socket):
         if self.numPackets>0:
-            print("Sending", ns.core.Simulator.Now())
-            socket.Send(ns.network.Packet(self.split_data[i], self.size))
+            if self.verbose:
+                print("Sending", ns.core.Simulator.Now())
+            socket.Send(self.packets[self.i])
             self.numPackets -= 1
-            ns.core.Simulator.Schedule(
-                ns.core.Seconds(time), self.sendPacket, self.source, time, i+1 
-            )
+
         else:
             socket.Close()
             
     
     def receivePacket(self, socket):
-        print("Recieving", ns.core.Simulator.Now())
-        tmp = socket.Recv().GetString()
+        if self.verbose:
+            print("Recieving", ns.core.Simulator.Now())
+        tmp = socket.Recv(maxSize = self.size, flags = 0)
         self.RecvData.append(tmp)
+        self.i += 1
+
 
     def getRecvData(self):
-        self.RecvData = [self.RecvData[i][:len(item)] for i, item in enumerate(self.split_data)]
-
+        #self.RecvData = [self.RecvData[i][:len(item)] for i, item in enumerate(self.split_data)]
+        for packets in self.packets[1:]:
+            self.packets[0].AddAtEnd(packets)
+        self.RecvData = self.packets[0].GetString()
         return pickle.loads("".join(self.RecvData).encode().decode("unicode_escape").encode("raw_unicode_escape"))
 
-    def simulation_run(self, time = 10):
-        
-        ns.core.Simulator.Schedule(
-                ns.core.Seconds(0.0), self.sendPacket, self.source, 1.0, 0 
-            )
-        
+    def init_send(self, time = 0.0, interval = 1.0):
+        for i in range(self.numPackets):
+            ns.core.Simulator.Schedule(
+                ns.core.Seconds(time), self.sendPacket, self.source
+        )
+            time += interval
+
+
+
+    def simulation_run(self, time = 0.0):
+        self.init_send(time)
         self.sink.SetRecvCallback(self.receivePacket)
         ns.core.Simulator.Run()
     

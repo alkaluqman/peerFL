@@ -1,13 +1,14 @@
-from tkinter.messagebox import askquestion
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import ns_helper
 import numpy as np
 import sys
 import pickle
 import tensorflow as tf
+#import tensorflow as tf
 
 ### Data
-
-data = tf.keras.models.load_model('local_model.h5')
+data = tf.keras.models.load_model("/home/sasuke/repos/p2pFLsim/Device/peer/local_model.h5")
 
 numNodes = 10
 ### Creating Nodes
@@ -28,7 +29,7 @@ sink = Initializer.createSink(2)
 
 sinkAddress, anyAddress = Initializer.createSocketAddress()
 
-Helper = ns_helper.nsHelper(sink, source,1024*4)
+Helper = ns_helper.nsHelper(sink, source,1024*1024)
 Helper.makePackets(data)
 Helper.act_as_server(sinkAddress)
 Helper.act_as_client()
