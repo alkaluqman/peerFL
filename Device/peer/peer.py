@@ -66,17 +66,23 @@ class Node:
         # self.local_model = self.in_connection.recv_string()
         return from_node
 
-    def training_step(self, step):
+    def training_step(self, step, num_epoch=1):
         # local model training
         build_flag = True if step == 1 else False
         self.local_model = training.local_training(
-            self.node_id, self.local_model, build_flag
+            self.node_id, self.local_model, build_flag, num_epoch
         )
         # self.local_model = {"from": self.node_id}  # for debugging
         # self.save_model()
 
     def inference_step(self):
         inference.eval_on_test_set(self.local_model)
+
+    def Aggregation(self):
+        pass
+
+    def GossipAggre(self):
+        pass
 
 
 def main():
@@ -86,6 +92,7 @@ def main():
     )  # We should only have 1 context which creates any number of sockets
     node_id = os.environ["ORIGIN"]
     peers_list = ast.literal_eval(os.environ["PEERS"])
+    # print(peers_list)
     this_node = Node(context, node_id, peers_list)
 
     # Read comm template config file

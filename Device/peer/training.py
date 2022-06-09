@@ -98,7 +98,7 @@ def load_client_dataset():
 
 
 # if __name__ == '__main__':
-def local_training(client_num, local_model, build_flag):
+def local_training(client_num, local_model, build_flag, num_epoch):
     # Load client dataset from volume mounted folder
     # client_num = 1
     log_prefix = "[" + str(client_num).upper() + "] "
@@ -124,7 +124,7 @@ def local_training(client_num, local_model, build_flag):
 
     print("%sTraining model ..." % log_prefix)
     # Training
-    local_model.fit(local_dataset, epochs=1, verbose=1)
+    local_model.fit(local_dataset, epochs=num_epoch, verbose=1)
     print("%sDone" % log_prefix)
 
     # Save model - moved to node
