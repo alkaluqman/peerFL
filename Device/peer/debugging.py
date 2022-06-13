@@ -8,7 +8,7 @@ import tensorflow as tf
 #import tensorflow as tf
 
 ### Data
-data = tf.keras.models.load_model("/home/sasuke/repos/p2pFLsim/Device/peer/local_model.h5")
+data = tf.keras.models.load_model("/home/sasuke/repos/p2pFLsim/Device/peer/local_model1.h5")
 
 numNodes = 10
 ### Creating Nodes
@@ -22,7 +22,7 @@ Interfaces = Initializer.createInterface()
 
 ### Setting Source and Sink
 
-source = Initializer.createSource(0)
+source = Initializer.createSource(1)
 sink = Initializer.createSink(2)
 
 ### Binding and connecting address

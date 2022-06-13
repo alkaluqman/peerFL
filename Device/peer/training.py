@@ -75,10 +75,10 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def load_client_dataset():
+def load_client_dataset(client_num):
     # basepath = os.path.join(os.getcwd(), "all_data")
     # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
-    client_path = "/usr/thisdocker/dataset"
+    client_path = "/home/sasuke/repos/p2pFLsim/all_data/" + "saved_data_client_" + str(client_num) #"/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
@@ -89,7 +89,7 @@ def local_training(client_num, local_model, build_flag):
     # Load client dataset from volume mounted folder
     # client_num = 1
     log_prefix = "[" + str(client_num).upper() + "] "
-    local_dataset = load_client_dataset()
+    local_dataset = load_client_dataset(client_num)
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]

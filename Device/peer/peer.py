@@ -3,21 +3,25 @@ import zmq
 import zmq_helper
 import json, joblib
 import ast
-import training, inference
+import training#, inference
 import ns_helper
 from argparse import ArgumentParser
+import tensorflow as tf
 
-parser = ArgumentParser()
-parser.add_argument('--ns', type = bool, default = False)
+#parser = ArgumentParser()
+#parser.add_argument('--ns', type = bool, default = False)
+
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
 
-    def __init__(self, context, node_id, peers, ns = False):
+    def __init__(self, context, node_id, peers, ns = True):
         if ns:
             self.Nodes = None
             self.Interfaces = None
             self.Devices = None
             self.Initializer  = None
+            self.local_model=None
+            self.ns = ns
         else:
             self.context = context
             self.node_id = node_id
@@ -28,7 +32,7 @@ class Node:
             self.local_model = None  # local model
             self.local_history = None
             self.initialize_node()
-            self.ns = ns
+
 
 
     def ns_initialize_nodes(self, numNodes):
@@ -42,8 +46,10 @@ class Node:
         self.Interfaces = Interface
         self.Initializer = initializer
 
+    def set_node_id(self, from_node):
+        self.node_id = self.Nodes.Get(from_node).GetId()
+
     def ns_initilize_source(self, from_node = 0):
-        self.node_id = self.Nodes.Get(from_node)
         return self.Initializer.createSource(from_node)
 
 
@@ -74,7 +80,7 @@ class Node:
         model_filename = "/usr/thisdocker/dataset/" + str(self.node_id) + ".pkl"
         self.local_model = joblib.load(model_filename)
 
-    def send_model(self, to_node):
+    def send_model(self, to_node, from_node):
         if not self.ns:
             try:
                 zmq_helper.send_zipped_pickle(self.out_connection[to_node], self.local_model)
@@ -83,12 +89,13 @@ class Node:
                 print("%sERROR establishing socket for to-node" % self.log_prefix)
         else:
             sink = self.Initializer.createSink(to_node)
-            source = self.ns_initilize_source()
+            source = self.ns_initilize_source(from_node=from_node)
             sinkAddress, anyAddress = self.Initializer.createSocketAddress()
-            self.Helper = ns_helper.nsHelper(sink, source)
-            self.Helper.act_as_client()
-            self.Helper.act_as_server(sinkAddress = sinkAddress)
+            self.Helper = ns_helper.nsHelper(sink, source, 1024*1024)
             self.Helper.makePackets(self.local_model)
+            self.Helper.act_as_server(sinkAddress)
+            self.Helper.act_as_client()
+    
 
     def receive_model(self):
         if not self.ns:
@@ -96,7 +103,7 @@ class Node:
             self.local_model = zmq_helper.recv_zipped_pickle(self.in_connection)  # Reads model object
             # self.local_model = self.in_connection.recv_string()
             return from_node
-        else:
+        else: 
             self.Helper.simulation_run()
             self.Helper.simulation_end()
 
@@ -107,12 +114,12 @@ class Node:
         build_flag = True if step == 1 else False
         self.local_model = training.local_training(self.node_id, self.local_model, build_flag)
         # self.local_model = {"from": self.node_id}  # for debugging
-        # self.save_model()
+        #self.save_model()
 
     def inference_step(self):
         inference.eval_on_test_set(self.local_model)
 
-def main(numNodes = 2):
+def main(numNodes = 4):
 #    """main function"""
 #    context = zmq.Context()  # We should only have 1 context which creates any number of sockets
 #    node_id = os.environ["ORIGIN"]
@@ -155,10 +162,13 @@ def main(numNodes = 2):
 #    # this_node.print_node_details()
     Nodes = Node(None, None, None, True)
     Nodes.ns_initialize_nodes(numNodes)
-    Nodes.ns_initilize_source()
-    Nodes.send_model(1)
+    Nodes.set_node_id(1)
+    Nodes.training_step(1)
+    Nodes.send_model(2, 1)
     Nodes.receive_model()
+    Nodes.set_node_id(2)
     Nodes.training_step(2)
+
 
 
 

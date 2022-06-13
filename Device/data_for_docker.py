@@ -4,7 +4,7 @@ import os
 from tensorflow.keras.datasets import cifar10
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 def load_dataset():
     # load dataset
@@ -90,8 +90,8 @@ def load_clients(num_clients):
 
 if __name__ == '__main__':
     # Create clients and save each dataset
-    # create_and_save_clients()
+    create_and_save_clients()
 
 
     # Load back and check client datasets
-    load_clients(3)
+    #load_clients(3)
