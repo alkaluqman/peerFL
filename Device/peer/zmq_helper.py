@@ -12,10 +12,10 @@ def act_as_server(context, server_identity):
 
 def act_as_client(context, server_identity, client_identity):
     """current node connection is configured as client, attached to this round's server
-     and return zmq socket for all communication"""
+    and return zmq socket for all communication"""
     socket = context.socket(zmq.DEALER)
     socket.setsockopt_string(zmq.IDENTITY, client_identity)
-    server_string = "tcp://"+str(server_identity)+":5555"
+    server_string = "tcp://" + str(server_identity) + ":5555"
     socket.connect(server_string)
     return socket
 
