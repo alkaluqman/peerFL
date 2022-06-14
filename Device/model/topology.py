@@ -18,9 +18,10 @@ import zmq
 
 class Topology:
     def __init__(self, num_nodes: int, directed: bool = False) -> None:
+        context = zmq.Context()
         self.num_nodes = num_nodes
         self.directed = directed
-        self.nodes = [Node(zmq.context(), i, []) for i in range(self.num_nodes)]
+        self.nodes = [Node(context, i, []) for i in range(self.num_nodes)]
         self.adj_list = {node: set() for node in self.nodes}
 
     def add_edge(self, node1: Node, node2: Node, weight: int = 0) -> Node:

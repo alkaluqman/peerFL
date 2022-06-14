@@ -1,6 +1,4 @@
-from pickletools import floatnl
-from regex import D
-from torch import empty
+from torch import empty, zero_
 import zmq
 import itertools
 import numpy as np
@@ -23,6 +21,7 @@ from typing import (
 from Device.model.topology import Topology
 from Device.peer.peer import Node
 from collections import defaultdict
+import numpy as np
 import random
 import math
 
@@ -138,10 +137,9 @@ class PANM(Topology):
         for enum_node in self.nodes:
             if enum_node not in self.adj_list[node]:
                 non_neigh_nodes.append(enum_node)
-        
+
         candidate_list = random.sample(non_neigh_nodes, l)
         return set(candidate_list)
-
 
     def cosine_similarity(self, node1: Node, node2: Node, alpha: float) -> float:
         """
@@ -164,10 +162,10 @@ class PANM(Topology):
         sampling_set = candidate_list.union(self.adj_list[node])
 
         def _compute_similarity(
-            sampling_set: Dict[Node, Set[Node]]
+            sampling_set: Dict[Node, Set[Node]], alpha: float
         ) -> Dict[Node, float]:
             dict = defaultdict(lambda: math.inf)
-            for node_neigh in sampling_set.keys():
+            for node_neigh in sampling_set:
                 dict[node_neigh] = self.cosine_similarity(node, node_neigh, alpha)
 
             return dict
@@ -242,15 +240,74 @@ class PANM(Topology):
             # possible sum would be considered zero
             return neigh
 
-        similarities = _compute_similarity(sampling_set, k)
-        new_neigh = _sample_neigh(similarities)
+        similarities = _compute_similarity(sampling_set, alpha)
+        new_neigh = _sample_neigh(similarities, k)
         self.adj_list[node] = new_neigh
 
-    def HeurNeighMatch(self) -> None:
+    def HeurNeighMatch(self, node: Node, l: int, alpha: int) -> None:
         """
         Heuristic Neighbour Matching
         """
-        pass
+        candidate_list = self.sample_candidate_list(node, l)
+        selected_neigh_list = set(random.sample(self.adj_list[node], l))
+        M: Set[Node] = candidate_list.union(selected_neigh_list)
+
+        def _compute_similarity(M: Dict[Node, Set[Node]]) -> Dict[Node, float]:
+            dict = defaultdict(lambda: math.inf)
+            for node_neigh in M:
+                dict[node_neigh] = self.cosine_similarity(node, node_neigh, alpha)
+
+            return dict
+
+        similarities = _compute_similarity(M)
+
+        def EM_init(sampling_list: TList[Node]) -> TList[TList[int]]:
+            gamma: TList[TList[int]] = [[], []]
+            for node_neigh in sampling_list:
+                if node_neigh in candidate_list:
+                    gamma[0].append(1)
+                    gamma[1].append(0)
+                elif node_neigh in selected_neigh_list:
+                    gamma[0].append(0)
+                    gamma[1].append(1)
+                else:
+                    gamma[0].append(0)
+                    gamma[1].append(0)
+
+        ## EM-Optimization step
+
+        # 1) Initialization
+        sampling_list = list(M)
+        gamma = EM_init(sampling_list)
+        gamma = np.array(gamma)
+        gamma_next = np.zeros(gamma.shape)
+        similarities = np.array(similarities)
+
+        assert gamma.shape[1] == len(sampling_list) == similarities.shape[0]
+
+        while gamma_next != gamma:
+
+            # 2) E-Step
+            n = np.sum(gamma, axis=1)
+            mu = np.dot(gamma, similarities) / n
+            beta = n / len(sampling_list)
+            simga = np.dot(gamma, (gamma.T - mu).T ** 2) / n
+
+            # 3) M-Step
+            gamma_next = gamma
+            y = np.expand_dims(np.argmax(gamma, axis=0), axis=1)
+            a = np.zeros(gamma.T.shape)
+            np.put_along_axis(a, y, 1, axis=1)
+            gamma = a.T
+
+        H = set()
+        for j in len(sampling_list):
+            if gamma[0][j] == 1:
+                H.add(sampling_list[j])
+
+        self.adj_list[node] = H.union(
+            self.adj_list[node].difference(selected_neigh_list)
+        )
 
     def train(self):
 
@@ -264,7 +321,7 @@ class PANM(Topology):
                     node.Aggregation()
                 else:
                     if round % self.tau == 0:
-                        self.HeurNeighMatch()
+                        self.HeurNeighMatch(node, l=self.l, alpha=self.alpha)
                         node.GossipAggre()
                     else:
                         node.GossipAggre()
