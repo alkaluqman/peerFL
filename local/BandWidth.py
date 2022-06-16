@@ -37,39 +37,40 @@ address.SetBase(ns.network.Ipv4Address("10.1.1.0"), ns.network.Ipv4Mask("255.255
 ssInterfaces = address.Assign(ssDevs)
 bsInterfaces = address.Assign(bsDevs)
 
-wimax.EnableLogComponents()
-
+#wimax.EnableLogComponents()
+ns.core.LogComponentEnable("UdpClient", ns.core.LOG_LEVEL_INFO)
+ns.core.LogComponentEnable("UdpServer", ns.core.LOG_LEVEL_INFO)
 
 Server = ns.applications.UdpServerHelper(100)
 
 serverApps = Server.Install(ns.network.NodeContainer(ssNodes.Get(0)))
 serverApps.Start(ns.core.Seconds(6.0))
-serverApps.Stop(ns.core.Seconds(7))
+serverApps.Stop(ns.core.Seconds(7.0))
 
 echoClient = ns.applications.UdpClientHelper(ssInterfaces.GetAddress(0), 100)
-echoClient.SetAttribute("MaxPackets", ns.core.UintegerValue(1))
-echoClient.SetAttribute("Interval", ns.core.TimeValue(ns.core.Seconds (1.0)))
+echoClient.SetAttribute("MaxPackets", ns.core.UintegerValue(1200))
+echoClient.SetAttribute("Interval", ns.core.TimeValue(ns.core.Seconds (0.5)))
 echoClient.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
          
 clientApps = echoClient.Install(ns.network.NodeContainer(ssNodes.Get(1))) # node5
 clientApps.Start(ns.core.Seconds(6.0))
-clientApps.Stop(ns.core.Seconds(7))
+clientApps.Stop(ns.core.Seconds(7.0))
 
 ns.core.Simulator.Stop(ns.core.Seconds(7.1))
 
 DlClassifierUgs = ns.wimax.IpcsClassifierRecord(
-    ssInterfaces.GetAddress(0), ns.network.Ipv4Mask("255.255.255.0"), ns.network.Ipv4Address("0.0.0.0"), ns.network.Ipv4Mask("0.0.0.0"),
+    ns.network.Ipv4Address("0.0.0.0"), ns.network.Ipv4Mask("0.0.0.0"),ssInterfaces.GetAddress(0), ns.network.Ipv4Mask("255.255.255.255"), 
     0,65000,
     100,100,17,1
 )
 
 DlServiceFlowUgs = wimax.CreateServiceFlow(
-    ns.wimax.ServiceFlow.SF_DIRECTION_UP,
+    ns.wimax.ServiceFlow.SF_DIRECTION_DOWN,
     ns.wimax.ServiceFlow.SF_TYPE_RTPS,DlClassifierUgs
 )
 
 UlClassifierUgs = ns.wimax.IpcsClassifierRecord(
-    ssInterfaces.GetAddress(1), ns.network.Ipv4Mask("255.255.255.0"), ns.network.Ipv4Address("0.0.0.0"), ns.network.Ipv4Mask("0.0.0.0"),
+    ssInterfaces.GetAddress(1), ns.network.Ipv4Mask("255.255.255.255"), ns.network.Ipv4Address("0.0.0.0"), ns.network.Ipv4Mask("0.0.0.0"),
     0,65000,
     100,100,17,1
 )

@@ -92,18 +92,23 @@ sink = ns.network.Socket.CreateSocket(
     ns.core.TypeId.LookupByName("ns3::UdpSocketFactory")
 )
 
+
+
+
+
+
 ### Binding and connecting address
 
-sinkAddress = ns.network.InetSocketAddress(StaInterface.GetAddress(receiver), 9)
-anyAddress = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)
-
-sink.Bind(anyAddress)
-source.Connect(sinkAddress)
-
-sink.SetRecvCallback(receivePacket)
-ns.core.Simulator.Schedule(
-    ns.core.Seconds(0.0), sendPacket, source, 
-)
+#sinkAddress = ns.network.InetSocketAddress(StaInterface.GetAddress(receiver), 9)
+#anyAddress = ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 9)
+#
+#sink.Bind(anyAddress)
+#source.Connect(sinkAddress)
+#
+#sink.SetRecvCallback(receivePacket)
+#ns.core.Simulator.Schedule(
+#    ns.core.Seconds(0.0), sendPacket, source, 
+#)
 
 ns.core.Simulator.Run()
 ns.core.Simulator.Destroy()

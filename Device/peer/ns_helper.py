@@ -22,12 +22,20 @@ class ns_initializer():
         self.Nodes = Nodes
         return Nodes
 
-    def createInterface(self):
+    def createInterface(self, loss = False, PowerStart = 1, PowerEnd = 1, Freq = 5.180e9):
         wifi = ns.wifi.WifiHelper()
 
         Phy = ns.wifi.YansWifiPhyHelper.Default()
         Channel = ns.wifi.YansWifiChannelHelper.Default()
-        Phy.SetChannel(Channel.Create())
+        if loss:
+            Channel.AddPropagationLoss("ns3::FriisPropagationLossModel",
+                                      "Frequency", ns.core.DoubleValue(Freq))
+            Channel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel")
+            Phy.SetChannel(Channel.Create())
+            Phy.Set("TxPowerStart", ns.core.DoubleValue(PowerStart))
+            Phy.Set("TxPowerEnd", ns.core.DoubleValue(PowerEnd))
+        else:
+            Phy.SetChannel(Channel.Create())
 
         ssid = ns.wifi.Ssid("ns-3-ssid")
         wifi.SetRemoteStationManager("ns3::ArfWifiManager")
@@ -81,11 +89,12 @@ class ns_initializer():
         return sinkAddress, anyAddress
     
 class nsHelper():
-    def __init__(self, sink, source, size = 1024, verbose = False):
+    def __init__(self, sink, source, size = 1024, DataRate = "512kb/s",verbose = False):
         self.sink = sink
         self.source = source
         self.RecvData = []
-        #self.buffer = buffer
+        self.lastStartTime = 0
+        self.DataRate = ns.network.DataRate(DataRate)
         self.size = size
         self.i = 0
         self.verbose = verbose
@@ -116,7 +125,7 @@ class nsHelper():
     def sendPacket(self, socket):
         if self.numPackets>0:
             if self.verbose:
-                print("Sending", ns.core.Simulator.Now())
+                print("Sending", ns.core.Simulator.Now().GetSeconds())
             socket.Send(self.packets[self.i])
             self.numPackets -= 1
 
@@ -126,7 +135,7 @@ class nsHelper():
     
     def receivePacket(self, socket):
         if self.verbose:
-            print("Recieving", ns.core.Simulator.Now())
+            print("Recieving", ns.core.Simulator.Now().GetSeconds())
         tmp = socket.Recv(maxSize = self.size, flags = 0)
         self.RecvData.append(tmp)
         self.i += 1
@@ -139,12 +148,13 @@ class nsHelper():
         self.RecvData = self.packets[0].GetString()
         return pickle.loads("".join(self.RecvData).encode().decode("unicode_escape").encode("raw_unicode_escape"))
 
-    def init_send(self, time = 0.0, interval = 1.0):
-        for i in range(self.numPackets):
+    def init_send(self, time):
+        for _ in range(self.numPackets):
+            #delta = ns.core.Simulator.Now() - time
             ns.core.Simulator.Schedule(
                 ns.core.Seconds(time), self.sendPacket, self.source
-        )
-            time += interval
+            )
+            time += self.size * 8.0/float(self.DataRate.GetBitRate())
 
 
 
