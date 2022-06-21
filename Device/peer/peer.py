@@ -3,6 +3,7 @@ import zmq
 import zmq_helper
 import json, joblib
 import ast
+import yaml
 import training#, inference
 import ns_helper
 from argparse import ArgumentParser
@@ -14,9 +15,9 @@ import tensorflow as tf
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
 
-    def __init__(self, context, node_id, peers, ns = True):
+    def __init__(self, context, node_id, peers, ns = True, numNodes = 10):
         if ns:
-            self.Nodes = None
+            self.ns_initialize_nodes(numNodes)
             self.Interfaces = None
             self.Devices = None
             self.Initializer  = None
@@ -119,7 +120,12 @@ class Node:
     def inference_step(self):
         inference.eval_on_test_set(self.local_model)
 
-def main(numNodes = 4):
+def get_config(config):
+    with open(config, 'r') as stream:
+        return yaml.safe_load(stream)
+
+
+def main(opt):
 #    """main function"""
 #    context = zmq.Context()  # We should only have 1 context which creates any number of sockets
 #    node_id = os.environ["ORIGIN"]
@@ -160,8 +166,9 @@ def main(numNodes = 4):
 #                this_node.local_history.append({"iteration":i, "prev_node":rcvd_from.decode("utf-8")})
 #
 #    # this_node.print_node_details()
-    Nodes = Node(None, None, None, True)
-    Nodes.ns_initialize_nodes(numNodes)
+    config = get_config(opt.config)
+    numNodes = config["numNodes"]
+    Nodes = Node(None, None, None, True, numNodes)
     Nodes.set_node_id(1)
     Nodes.training_step(1)
     Nodes.send_model(2, 1)
