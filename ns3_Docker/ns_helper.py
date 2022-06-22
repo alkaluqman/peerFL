@@ -98,7 +98,8 @@ class nsHelper():
         self.source = source
         self.RecvData = []
         self.netData = []
-        self.lastStartTime = 0
+        self.Start = True
+        self.toRecv = -1
         self.DataRate = ns.network.DataRate(DataRate)
         self.size = size
         self.totData = []
@@ -119,8 +120,7 @@ class nsHelper():
         size = sys.getsizeof(data)
         self.numPackets = int(size / self.size)
         p = ns.network.Packet(data, size)
-
-        self.packets = []
+        self.packets = [ns.network.Packet(str(pickle.dumps(self.numPackets + 1))[2:-1], self.size)]
         for i, start in enumerate(range(0, size, self.size)):
             if (i < self.numPackets):
                 self.packets.append(p.CreateFragment(start, self.size))
@@ -149,9 +149,14 @@ class nsHelper():
         tmp = socket.Recv(maxSize = self.size, flags = 0)
         self.RecvData.append(tmp)
         self.RecvPacket += 1
-        if(self.RecvPacket == self.numPackets):
+        #print(self.toRecv)
+        if(self.RecvPacket == self.toRecv or self.Start):
             self.getRecvData()
             self.RecvPacket = 0
+            if self.Start:
+                self.toRecv = self.netData.pop(0)
+                print(self.toRecv)
+                self.Start = False
         
 
     def getRecvData(self):
