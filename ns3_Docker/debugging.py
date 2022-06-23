@@ -7,7 +7,7 @@ import pickle
 #import tensorflow as tf
 
 ### Data
-data = np.arange(3)
+data = np.arange(100)
 
 numNodes = 10
 ### Creating Nodes

@@ -151,12 +151,16 @@ class nsHelper():
         self.RecvPacket += 1
         #print(self.toRecv)
         if(self.RecvPacket == self.toRecv or self.Start):
-            self.getRecvData()
-            self.RecvPacket = 0
-            if self.Start:
-                self.toRecv = self.netData.pop(0)
-                print(self.toRecv)
+            if(self.RecvPacket == self.toRecv):
+                self.getRecvData()
+                print("yes received total")
+                self.Start = True
+                self.toRecv = -1
+            elif self.Start:
+                self.getRecvData()
+                self.toRecv = self.netData.pop(-1)
                 self.Start = False
+            self.RecvPacket = 0
         
 
     def getRecvData(self):
