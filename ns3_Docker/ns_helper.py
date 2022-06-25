@@ -8,6 +8,7 @@ import pickle
 import sys
 import ns.flow_monitor
 
+
 class ns_initializer():
     def __init__(self, numNodes, mobility=True, address="10.1.1.0"):
         self.numNodes = numNodes
@@ -23,14 +24,66 @@ class ns_initializer():
         self.Nodes = Nodes
         return Nodes
 
-    def createInterface(self, loss=False, PowerStart=1, PowerEnd=1, Freq=5.180e9):
+    def createInterface(self, loss=False, PowerStart=1, PowerEnd=1, Freq=5.15e9, model = 0, height = 0, Lexp = 3, Tdist = [1, 200, 500], Texp = [1.9, 3.8, 3.8], Ndist = [80, 200], N_m=[1.5, 0.75, 0.75], Rss = -150, M_loss = 1.8e8, MaxRange = 250):
         wifi = ns.wifi.WifiHelper()
-
+        lossModels ={
+            0: "ns3::FriisPropagationLossModel",
+            1: "ns3::TwoRayGroundPropagationLossModel",
+            2: "ns3::LogDistancePropagationLossModel",
+            3: "ns3::ThreeLogDistancePropagationLossModel",
+            4: "ns3::NakagamiPropagationLossModel",
+            5: "ns3::FixedRssLossModel",
+            6: "ns3::MatrixPropagationLossModel",
+            7: "ns3::RangePropagationLossModel",
+            8: "RandomPropagationLossModel",
+            9: "ns3::OkumuraHataPropagationLossModel",
+        }
         Phy = ns.wifi.YansWifiPhyHelper.Default()
         Channel = ns.wifi.YansWifiChannelHelper.Default()
         if loss:
-            Channel.AddPropagationLoss("ns3::FriisPropagationLossModel",
-                                       "Frequency", ns.core.DoubleValue(Freq))
+            if model == 0:
+                Channel.AddPropagationLoss(lossModels[0],
+                                           "Frequency", ns.core.DoubleValue(Freq))
+            elif model == 1:
+                Channel.AddPropagationLoss(lossModels[1],"HieghtAboveZ", ns.core.DoubleValue(height),
+                                           "Frequency", ns.core.DoubleValue(Freq))
+            elif model == 2:
+                Channel.AddPropagationLoss(lossModels[2],
+                                           "Exponent", ns.core.DoubleValue(Lexp))
+            elif model == 3:
+                Channel.AddPropagationLoss(lossModels[3],
+                                           "Distance0", ns.core.DoubleValue(Tdist[0]),
+                                           "Distance1", ns.core.DoubleValue(Tdist[1]),
+                                           "Distance2", ns.core.DoubleValue(Tdist[2]),
+                                           "Exponent0", ns.core.DoubleValue(Texp[0]),
+                                           "Exponent1", ns.core.DoubleValue(Texp[1]),
+                                           "Exponent2", ns.core.DoubleValue(Texp[2]),
+                                           )
+            elif model == 4:
+                Channel.AddPropagationLoss(lossModels[4],
+                                           "Distance1", ns.core.DoubleValue(Ndist[0]),
+                                           "Distance2", ns.core.DoubleValue(Ndist[1]),
+                                           "m0", ns.core.DoibleValue(N_m[0]),
+                                           "m1", ns.core.DoubleValue(N_m[1]),
+                                           "m2", ns.core.DoubleValue(N_m[2])
+                                           )
+            elif model == 5:
+                Channel.AddPropagationLoss(lossModels[5],
+                                        "Rss", ns.core.DoubleValue(Rss),)
+            elif model == 6:
+                Channel.AddPropagationLoss(lossModels[6],
+                                           "DefaultLoss", ns.core.DoubleValue(M_loss))
+            elif model == 7:
+                Channel.AddPropagationLoss(lossModels[7],
+                                           "MaxRange", ns.core.DoubleValue(MaxRange))
+            elif model == 8:
+                Channel.AddPropagationLoss(lossModels[8],
+                                           "Variable", ns.core.UniformRandomVariable())
+            elif model == 9:
+                Channel.AddPropagationLoss(lossModels[9],
+                                           "Frequency", ns.core.DoubleValue(Freq))
+            else:
+                raise NotImplementedError
             Channel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel")
             Phy.SetChannel(Channel.Create())
             Phy.Set("TxPowerStart", ns.core.DoubleValue(PowerStart))

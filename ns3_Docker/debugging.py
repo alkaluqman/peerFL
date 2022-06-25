@@ -51,4 +51,4 @@ for e in range(epochs):
 ### Start all simulation runs
 Helper.simulation_start()
 Helper.simulation_end()
-print(Helper.netData)
+print(len(Helper.netData) == len(order) - 1)
