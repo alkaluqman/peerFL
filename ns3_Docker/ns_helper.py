@@ -240,6 +240,9 @@ class nsHelper():
         #ns.core.Simulator.Schedule(
         #    ns.core.Seconds(time + 0.01), self.getRecvData
         #)
+
+
+
     def print_stats(self, os, st):
         print("  Tx Bytes: ", st.txBytes, file=os)
         print("  Rx Bytes: ", st.rxBytes, file=os)
