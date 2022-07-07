@@ -88,12 +88,13 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def load_client_dataset():
+def load_client_dataset(client_num):
     # basepath = os.path.join(os.getcwd(), "all_data")
-    # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
+    # client_path = os.path.join(basepath, "saved_data_client_" + str(client_num[-1]))
     client_path = "/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
+    # new_dataset = tf.keras.datasets.cifar10.load_data()
     return new_dataset
 
 
@@ -101,8 +102,9 @@ def load_client_dataset():
 def local_training(client_num, local_model, build_flag, num_epoch):
     # Load client dataset from volume mounted folder
     # client_num = 1
+    # print(type(client_num))
     log_prefix = "[" + str(client_num).upper() + "] "
-    local_dataset = load_client_dataset()
+    local_dataset = load_client_dataset(client_num)
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
@@ -111,10 +113,10 @@ def local_training(client_num, local_model, build_flag, num_epoch):
 
     if build_flag:
         # Create model
-        lr = 0.01
+        learning_rate = 0.01
         loss = "categorical_crossentropy"
         metrics = ["accuracy"]
-        optimizer = SGD(lr=lr, decay=lr, momentum=0.9)
+        optimizer = SGD(learning_rate=learning_rate, decay=learning_rate, momentum=0.9)
 
         print("%sBuilding model ..." % log_prefix)
         smlp_local = SimpleMLP()
@@ -124,8 +126,9 @@ def local_training(client_num, local_model, build_flag, num_epoch):
 
     print("%sTraining model ..." % log_prefix)
     # Training
+    prev_local_model = local_model
     local_model.fit(local_dataset, epochs=num_epoch, verbose=1)
     print("%sDone" % log_prefix)
 
     # Save model - moved to node
-    return local_model
+    return local_model, prev_local_model

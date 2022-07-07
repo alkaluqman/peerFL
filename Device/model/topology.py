@@ -12,19 +12,27 @@ from typing import (
     Type as PythonType,
 )
 
-from Device.peer.peer import Node
-import zmq
+
+class GNode:
+    def __init__(self, node_id: int, peers: TList["GNode"]):
+        self.node_id = node_id
+        self.peers = peers
+
+    def __str__(self):
+        return "node{}".format(self.node_id)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Topology:
     def __init__(self, num_nodes: int, directed: bool = False) -> None:
-        context = zmq.Context()
         self.num_nodes = num_nodes
         self.directed = directed
-        self.nodes = [Node(context, i, []) for i in range(self.num_nodes)]
+        self.nodes = [GNode(str(i), []) for i in range(1, self.num_nodes + 1)]
         self.adj_list = {node: set() for node in self.nodes}
 
-    def add_edge(self, node1: Node, node2: Node, weight: int = 0) -> Node:
+    def add_edge(self, node1: GNode, node2: GNode, weight: int = 0) -> None:
 
         self.adj_list[node1].add((node2, weight))
 

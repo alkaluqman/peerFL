@@ -1,6 +1,5 @@
-from torch import empty, zero_
 import zmq
-import itertools
+import os
 import numpy as np
 from typing import (
     Callable,
@@ -15,15 +14,16 @@ from typing import (
     Type as PythonType,
 )
 
-# import sys
-# sys.path.append("../device")
-
-from Device.model.topology import Topology
+from Device.model.topology import Topology, GNode
 from Device.peer.peer import Node
 from collections import defaultdict
 import numpy as np
 import random
 import math
+
+
+def list_to_np():
+    pass
 
 
 class PANM(Topology):
@@ -46,7 +46,7 @@ class PANM(Topology):
         tau : Round interval of HNM in stage two
         alpha : Hyperparmeter in gradient-based metric
         """
-        super().__init__(self, num_nodes=n, directed=directed)
+        super().__init__(num_nodes=n, directed=directed)
 
         self.k = k
         self.l = l
@@ -56,6 +56,7 @@ class PANM(Topology):
         self.e = e
         self.T1 = T1
         self.T2 = T2
+        self.initNeighList()
 
     def initNeighList(self) -> None:
         """
@@ -92,11 +93,11 @@ class PANM(Topology):
             # Attempt to create an edge set
 
             edges = set()
-            stubs = list(range(n)) * d
+            stubs = list(range(self.n)) * self.k
 
             while stubs:
                 potential_edges = defaultdict(lambda: 0)
-                random.seed.shuffle(stubs)
+                random.shuffle(stubs)
                 stubiter = iter(stubs)
                 for s1, s2 in zip(stubiter, stubiter):
                     if s1 > s2:
@@ -129,139 +130,133 @@ class PANM(Topology):
             self.nodes[edge[0]].peers.append(self.nodes[edge[1]])
             self.nodes[edge[1]].peers.append(self.nodes[edge[0]])
 
-    def sample_candidate_list(self, node: Node, l: int) -> Set[Node]:
+    def sample_candidate_list(self, node: GNode, l: int) -> Set[Node]:
         """
         This function samples $l$ nodes from non-neighbor nodes for a node $i$
         """
         non_neigh_nodes = []
         for enum_node in self.nodes:
-            if enum_node not in self.adj_list[node]:
+            if (enum_node, 0) not in self.adj_list[node]:
                 non_neigh_nodes.append(enum_node)
 
         candidate_list = random.sample(non_neigh_nodes, l)
         return set(candidate_list)
 
-    def cosine_similarity(self, node1: Node, node2: Node, alpha: float) -> float:
+    def cosine_similarity(self, node1: Node, node2: GNode, alpha: float) -> float:
         """
         This function will find the similarity $s_{i,j}$ for two nodes node1 and node2
         """
 
-        def _cos1(node1: Node, node2: Node) -> float:
-            pass
+        def _cos1(node1: Node, node2: GNode) -> float:
 
-        def _cos2(node1: Node, node2: Node) -> float:
-            pass
+            w1 = np.subtract(
+                np.array(node1.local_model.get_weights(), dtype=object),
+                np.array(node1.prev_local_model.get_weights(), dtype=object),
+            )
+            w2 = np.subtract(
+                np.array(node1.peer_models[str(node2)].get_weights(), dtype=object),
+                np.array(
+                    node1.prev_peer_models[str(node2)].get_weights(), dtype=object
+                ),
+            )
+            # vec1 = w1.flatten()
+            # vec2 = w2.flatten()
+            # unit_vec1 = vec1/np.linalg.norm(vec1)
+            # unit_vec2 = vec2/np.linalg.norm(vec2)
+
+            # return np.dot(unit_vec1, unit_vec2)
+            return random.uniform(0, 1)
+
+        def _cos2(node1: Node, node2: GNode) -> float:
+            w1 = np.subtract(
+                np.array(node1.local_model.get_weights(), dtype=object),
+                np.array(node1.initial_model.get_weights(), dtype=object),
+            )
+            w2 = np.subtract(
+                np.array(node1.peer_models[str(node2)].get_weights(), dtype=object),
+                np.array(node1.initial_model.get_weights(), dtype=object),
+            )
+            # vec1 = w1.flatten()
+            # vec2 = w2.flatten()
+            # unit_vec1 = vec1/np.linalg.norm(vec1)
+            # unit_vec2 = vec2/np.linalg.norm(vec2)
+
+            # return np.dot(unit_vec1, unit_vec2)
+            return random.uniform(0, 1)
 
         return alpha * _cos1(node1, node2) + (1 - alpha) * _cos2(node1, node2)
 
-    def ConfigNeighInit(self, node: Node, k: int, l: int, alpha: float) -> None:
+    def ConfigNeighInit(self, this_node: Node, k: int, l: int, alpha: float) -> None:
         """
         Confident Neighbour Initialization
         """
+        node = self.nodes[int(this_node.node_id[-1]) - 1]
         candidate_list = self.sample_candidate_list(node, l)
-        sampling_set = candidate_list.union(self.adj_list[node])
+        sampling_set = candidate_list.union(set([i[0] for i in self.adj_list[node]]))
 
         def _compute_similarity(
-            sampling_set: Dict[Node, Set[Node]], alpha: float
-        ) -> Dict[Node, float]:
+            sampling_set: Dict[GNode, Set[GNode]], alpha: float
+        ) -> Dict[GNode, float]:
             dict = defaultdict(lambda: math.inf)
             for node_neigh in sampling_set:
-                dict[node_neigh] = self.cosine_similarity(node, node_neigh, alpha)
+                dict[node_neigh] = self.cosine_similarity(this_node, node_neigh, alpha)
 
             return dict
 
-        def _sample_neigh(similarities: Dict[Node, float], k: int) -> Set[Node]:
+        def _sample_neigh2(similarities: Dict[GNode, float], k: int) -> Set[GNode]:
             """
-            This function solves the "Maximum sum subsequence of length k" problem using the dynamic progamming approach
-            Time Complexity: O(n^2*k)
+            This function solves the "Maximum sum subsequence of length k" problem using priority queue
             """
-
             n = len(similarities)
-            keys = list(similarities)
-            # In the implementation dp[n][k] represents
-            # maximum sum subsequence of length k and the
-            # subsequence is
-            # ending at index n.
-            dp: TList[TList[int]] = [-1] * n
-            dp_neigh: TList[TList[int]] = [set()] * n
-            ans = -1
+            nums = list(similarities.values())
+            keys = list(similarities.keys())
 
-            # Initializing whole multidimensional
-            # dp array with value - 1
-            for i in range(n):
-                dp[i] = [-1] * (k + 1)
-                dp_neigh[i] = [set()] * (k + 1)
+            sortedArray = nums.copy()
+            sortedArray.sort()
 
-            # For each ith position increasing subsequence
-            # of length 1 is equal to that array ith value
-            # so initializing dp[i][1] with that array value
-            for i in range(n):
-                dp[i][1] = similarities[keys[i]]
-                dp_neigh[i][1].add(keys[i])
+            d = defaultdict(lambda: 0)
+            neigh = [None] * k
 
-            # Starting from 1st index as we have calculated
-            # for 0th index. Computing optimized dp values
-            # in bottom-up manner
-            for i in range(1, n):
-                elem = -1
-                for j in range(i):
+            for i in range(len(sortedArray) - k, len(sortedArray)):
+                d[sortedArray[i]] = d.get(sortedArray[i], 0) + 1
 
-                    # check for increasing subsequence
-                    if similarities[keys[j]] < similarities[keys[i]]:
-                        for l in range(1, k):
+            j = 0
 
-                            # Proceed if value is pre calculated
-                            if dp[j][l] != -1:
-
-                                # Check for all the subsequences
-                                # ending at any j < i and try including
-                                # element at index i in them for
-                                # some length l. Update the maximum
-                                # value for every length.
-                                temp = dp[i][l + 1]
-                                dp[i][l + 1] = max(
-                                    dp[i][l + 1], dp[j][l] + similarities[keys[i]]
-                                )
-                                if dp[i][l + 1] != temp:
-                                    if len(dp_neigh[i][l + 1]) != 0:
-                                        dp_neigh[i][l + 1].remove(elem)
-                                    dp_neigh[i][l + 1].add(keys[j])
-                                    elem = keys[j]
-
-            # The final result would be the maximum
-            # value of dp[i][k] for all different i.
-            neigh = set()
-            for i in range(n):
-                if ans < dp[i][k]:
-                    ans = dp[i][k]
-                    neigh = dp_neigh[i][k]
-
-            # When no subsequence of length k is
-            # possible sum would be considered zero
+            for n in nums:
+                if j < k and n in d:
+                    neigh[j] = keys[nums.index(n)]
+                    if d[n] == 1:
+                        d.pop(n)
+                    elif d[n] > 1:
+                        d[n] -= 1
+                    j += 1
             return neigh
 
         similarities = _compute_similarity(sampling_set, alpha)
-        new_neigh = _sample_neigh(similarities, k)
-        self.adj_list[node] = new_neigh
+        new_neigh = _sample_neigh2(similarities, k)
+        self.adj_list[node] = set([(i, 0) for i in iter(new_neigh)])
 
-    def HeurNeighMatch(self, node: Node, l: int, alpha: int) -> None:
+    def HeurNeighMatch(self, this_node: Node, l: int, alpha: int) -> None:
         """
         Heuristic Neighbour Matching
         """
+        node = self.nodes[int(this_node.node_id[-1]) - 1]
         candidate_list = self.sample_candidate_list(node, l)
-        selected_neigh_list = set(random.sample(self.adj_list[node], l))
-        M: Set[Node] = candidate_list.union(selected_neigh_list)
+        selected_neigh_list = set(
+            random.sample(set([i[0] for i in self.adj_list[node]]), l)
+        )
+        M: Set[GNode] = candidate_list.union(selected_neigh_list)
 
-        def _compute_similarity(M: Dict[Node, Set[Node]]) -> Dict[Node, float]:
+        def _compute_similarity(M: Dict[GNode, Set[GNode]]) -> Dict[GNode, float]:
             dict = defaultdict(lambda: math.inf)
             for node_neigh in M:
-                dict[node_neigh] = self.cosine_similarity(node, node_neigh, alpha)
+                dict[node_neigh] = self.cosine_similarity(this_node, node_neigh, alpha)
 
             return dict
 
         similarities = _compute_similarity(M)
 
-        def EM_init(sampling_list: TList[Node]) -> TList[TList[int]]:
+        def EM_init(sampling_list: TList[GNode]) -> TList[TList[int]]:
             gamma: TList[TList[int]] = [[], []]
             for node_neigh in sampling_list:
                 if node_neigh in candidate_list:
@@ -274,6 +269,8 @@ class PANM(Topology):
                     gamma[0].append(0)
                     gamma[1].append(0)
 
+            return gamma
+
         ## EM-Optimization step
 
         # 1) Initialization
@@ -281,11 +278,11 @@ class PANM(Topology):
         gamma = EM_init(sampling_list)
         gamma = np.array(gamma)
         gamma_next = np.zeros(gamma.shape)
-        similarities = np.array(similarities)
+        similarities = np.array(list(similarities.items()))
 
         assert gamma.shape[1] == len(sampling_list) == similarities.shape[0]
 
-        while gamma_next != gamma:
+        while gamma_next.all() != gamma.all():
 
             # 2) E-Step
             n = np.sum(gamma, axis=1)
@@ -301,27 +298,59 @@ class PANM(Topology):
             gamma = a.T
 
         H = set()
-        for j in len(sampling_list):
+        for j in range(len(sampling_list)):
             if gamma[0][j] == 1:
-                H.add(sampling_list[j])
+                H.add((sampling_list[j], 0))
 
+        selected_neigh_list_weight = set([(i, 0) for i in iter(selected_neigh_list)])
         self.adj_list[node] = H.union(
-            self.adj_list[node].difference(selected_neigh_list)
+            self.adj_list[node].difference(selected_neigh_list_weight)
         )
+
+    def send_models(self, this_node: Node):
+        for neigh in self.nodes:
+            if neigh == self.nodes[int(this_node.node_id[-1]) - 1]:
+                continue
+            this_node.send_model("node" + str(neigh.node_id))
 
     def train(self):
 
-        for round in range(1, self.T1 + self.T2):
-            for node in self.nodes:
+        context = (
+            zmq.Context()
+        )  # We should only have 1 context which creates any number of sockets
+        node_id = os.environ["ORIGIN"]
+        peers_list = ["node" + str(peer.node_id) for peer in self.nodes]
+        this_node = Node(context, node_id, peers_list)
 
-                node.training_step(round, self.e)
-                if round < self.T1:
-                    if round != 1:
-                        self.ConfigNeighInit(node, k=self.k, alpha=self.alpha, l=self.l)
-                    node.Aggregation()
+        for round in range(1, self.T1 + self.T2):
+
+            this_node.training_step(round, self.e)
+
+            if round < self.T1:
+                if round != 1:
+                    self.ConfigNeighInit(
+                        this_node, k=self.k, alpha=self.alpha, l=self.l
+                    )
+                self.send_models(this_node)
+                this_node.Aggregation(
+                    self.adj_list[self.nodes[int(this_node.node_id[-1]) - 1]]
+                )
+            else:
+                if round % self.tau == 0:
+                    self.HeurNeighMatch(this_node, l=self.l, alpha=self.alpha)
+                    self.send_models(this_node)
+                    this_node.GossipAggre(
+                        self.adj_list[self.nodes[int(this_node.node_id[-1]) - 1]]
+                    )
                 else:
-                    if round % self.tau == 0:
-                        self.HeurNeighMatch(node, l=self.l, alpha=self.alpha)
-                        node.GossipAggre()
-                    else:
-                        node.GossipAggre()
+                    self.send_models(this_node)
+                    this_node.GossipAggre(
+                        self.adj_list[self.nodes[int(this_node.node_id[-1]) - 1]]
+                    )
+
+
+if __name__ == "__main__":
+
+    num_clients = os.environ["NUM_CLIENTS"]
+    panm = PANM(n=num_clients, k=2, l=1, e=1, tau=2, alpha=0.5, T1=5, T2=5)
+    panm.train()
