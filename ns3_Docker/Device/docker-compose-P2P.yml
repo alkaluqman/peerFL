@@ -1,0 +1,41 @@
+version: '2'
+services:
+    node1:
+        build: ./node/
+        environment:
+            - PYTHONUNBUFFERED=1 #to flush Python stdout else logs not displayed
+            - ORIGIN=node1
+            - NUM_CLIENTS=4
+        volumes:
+            - ./all_data/saved_data_client_1:/usr/thisdocker/dataset:rw
+    node2:
+        build: ./node/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=node2
+            - NUM_CLIENTS=4
+        volumes:
+            - ./all_data/saved_data_client_2:/usr/thisdocker/dataset:rw
+    node3:
+        build: ./node/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=node3
+            - NUM_CLIENTS=4
+        volumes:
+            - ./all_data/saved_data_client_3:/usr/thisdocker/dataset:rw
+    node4:
+        build: ./node/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=node4
+            - NUM_CLIENTS=4
+        volumes:
+            - ./all_data/saved_data_client_4:/usr/thisdocker/dataset:rw
+#    node5:
+#        build: ./node/
+#        environment:
+#            - ORIGIN=node5
+#            - NUM_CLIENTS=4
+#        volumes:
+#            - ./all_data/saved_data_client_5:/usr/thisdocker/dataset:rw
