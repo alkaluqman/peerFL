@@ -3,4 +3,4 @@ COPY . .
 
 RUN pip install pyzmq
 EXPOSE 5555-5565
-CMD ["python", "panm.py"]
+CMD ["python", "model/panm.py"]

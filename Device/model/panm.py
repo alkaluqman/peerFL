@@ -14,8 +14,12 @@ from typing import (
     Type as PythonType,
 )
 
-from Device.model.topology import Topology, GNode
-from Device.peer.peer import Node
+import sys
+sys.path.append('/workspace/')
+sys.path.append('/workspace/peer')
+
+from model.topology import Topology, GNode
+from peer.peer import Node
 from collections import defaultdict
 import numpy as np
 import random
