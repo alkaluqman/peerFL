@@ -1,8 +1,8 @@
 import subprocess
 import os
-from jwt import InvalidKeyError
 import yaml
 from argparse import ArgumentParser
+import time
 
 def create(numNodes, names, baseName):
 
@@ -56,7 +56,7 @@ def ns3(numNodes):
     print("######################################################")
 
     subprocess.Popen(
-        "cd home/sasuke/repos/bake/source/ns-3.32/ && ./waf --pyrun /home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/tap-wifi-virtual-machine.py"
+        "cd home/sasuke/repos/bake/source/ns-3.32/ && sudo ./waf --pyrun /home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/tap-wifi-virtual-machine.py"
         ,shell = True
         )
 
@@ -66,8 +66,21 @@ def ns3(numNodes):
     
 
 
-def emulate():
-    pass
+def emulate(numNodes, names):
+    #Starting  Sim
+
+    for  i in range(0, numNodes):
+        subprocess.call(
+            "sudo docker restart -t 0 %s" % names[i], shell = True
+        )
+    
+    for i in range(0, numNodes):
+        subprocess.call("sudo bash ./container.sh %s %s" % (names[i], i), shell = True)
+    
+    return 
+
+    
+    
 
 def destroy(numNodes, names):
     print("#####################################################")
@@ -128,11 +141,11 @@ def main():
     elif operation == "ns3":
         ns3()
     elif operation == "emulation":
-        emulate()
+        emulate(numNodes, names)
     elif operation == "destroy":
-        destroy()
+        destroy(numNodes, names)
     else:
-        raise InvalidKeyError
+        raise KeyError
 
 if __name__ ==  '__main__':
     main()

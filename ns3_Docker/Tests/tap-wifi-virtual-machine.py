@@ -28,7 +28,7 @@ import ns.wifi
 
 cmd = ns.core.CommandLine()
 cmd.numNodes = 2
-cmd.totalTIme = 600
+cmd.totalTime = 600
 cmd.baseName = "Node"
 
 cmd.AddValue("numNodes", "Number of nodes/devices")
@@ -36,10 +36,10 @@ cmd.AddValue("totalTime", "Total simulation time")
 cmd.AddValue("baseName", "Base Name of the Node")
 
 
-cmd.parse(sys.argv)
+cmd.Parse(sys.argv)
 
-numNodes = cmd.numNodes
-totalTime = cmd.totalTime
+numNodes = int(cmd.numNodes)
+totalTime = int(cmd.totalTime)
 baseName = cmd.baseName
 
 #

@@ -26,7 +26,7 @@ tunctl -t tap-$NAME
 ifconfig tap-$NAME 0.0.0.0 promisc up
 
 brctl addif br-$NAME tap-$NAME
-ifconfig br-$NAME ups
+ifconfig br-$NAME up
 
 # References
 # brctl -> http://linuxcommand.org/man_pages/brctl8.html

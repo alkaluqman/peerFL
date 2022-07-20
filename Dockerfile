@@ -10,6 +10,7 @@ RUN apt-get install -y python3-setuptools
 RUN apt-get install -y gir1.2-goocanvas-2.0 python-gi python-gi-cairo python3-gi python3-gi-cairo python3-pygraphviz gir1.2-gtk-3.0 ipython3  
 RUN apt-get install -y qt5-default
 RUN apt-get install -y castxml
+RUN apt-get install -y iputils-ping
 
 WORKDIR /ns
 COPY requirements.txt ./requirements.txt
