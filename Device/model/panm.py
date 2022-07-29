@@ -140,7 +140,7 @@ class PANM(Topology):
         """
         non_neigh_nodes = []
         for enum_node in self.nodes:
-            if (enum_node, 0) not in self.adj_list[node]:
+            if (enum_node, 0) not in self.adj_list[node] and enum_node is not node:
                 non_neigh_nodes.append(enum_node)
 
         candidate_list = random.sample(non_neigh_nodes, l)
@@ -163,13 +163,20 @@ class PANM(Topology):
                     node1.prev_peer_models[str(node2)].get_weights(), dtype=object
                 ),
             )
-            # vec1 = w1.flatten()
-            # vec2 = w2.flatten()
-            # unit_vec1 = vec1/np.linalg.norm(vec1)
-            # unit_vec2 = vec2/np.linalg.norm(vec2)
 
-            # return np.dot(unit_vec1, unit_vec2)
-            return random.uniform(0, 1)
+            vec1, vec2 = [], []
+            for i in w1:
+                vec1.extend(i.flatten())
+            
+            for i in w2:
+                vec2.extend(i.flatten())
+
+            vec1 = np.array(vec1)
+            vec2 = np.array(vec2)
+            unit_vec1 = vec1/np.linalg.norm(vec1)
+            unit_vec2 = vec2/np.linalg.norm(vec2)
+
+            return np.dot(unit_vec1, unit_vec2)
 
         def _cos2(node1: Node, node2: GNode) -> float:
             w1 = np.subtract(
@@ -180,13 +187,20 @@ class PANM(Topology):
                 np.array(node1.peer_models[str(node2)].get_weights(), dtype=object),
                 np.array(node1.initial_model.get_weights(), dtype=object),
             )
-            # vec1 = w1.flatten()
-            # vec2 = w2.flatten()
-            # unit_vec1 = vec1/np.linalg.norm(vec1)
-            # unit_vec2 = vec2/np.linalg.norm(vec2)
 
-            # return np.dot(unit_vec1, unit_vec2)
-            return random.uniform(0, 1)
+            vec1, vec2 = [], []
+            for i in w1:
+                vec1.extend(i.flatten())
+            
+            for i in w2:
+                vec2.extend(i.flatten())
+
+            vec1 = np.array(vec1)
+            vec2 = np.array(vec2)
+            unit_vec1 = vec1/np.linalg.norm(vec1)
+            unit_vec2 = vec2/np.linalg.norm(vec2)
+
+            return np.dot(unit_vec1, unit_vec2)
 
         return alpha * _cos1(node1, node2) + (1 - alpha) * _cos2(node1, node2)
 
@@ -207,7 +221,7 @@ class PANM(Topology):
 
             return dict
 
-        def _sample_neigh2(similarities: Dict[GNode, float], k: int) -> Set[GNode]:
+        def _sample_neigh(similarities: Dict[GNode, float], k: int) -> Set[GNode]:
             """
             This function solves the "Maximum sum subsequence of length k" problem using priority queue
             """
@@ -237,7 +251,7 @@ class PANM(Topology):
             return neigh
 
         similarities = _compute_similarity(sampling_set, alpha)
-        new_neigh = _sample_neigh2(similarities, k)
+        new_neigh = _sample_neigh(similarities, k)
         self.adj_list[node] = set([(i, 0) for i in iter(new_neigh)])
 
     def HeurNeighMatch(self, this_node: Node, l: int, alpha: int) -> None:
@@ -356,5 +370,6 @@ class PANM(Topology):
 if __name__ == "__main__":
 
     num_clients = os.environ["NUM_CLIENTS"]
+    num_clients = int(num_clients)
     panm = PANM(n=num_clients, k=2, l=1, e=1, tau=2, alpha=0.5, T1=5, T2=5)
     panm.train()

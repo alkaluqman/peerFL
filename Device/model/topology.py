@@ -29,7 +29,7 @@ class Topology:
     def __init__(self, num_nodes: int, directed: bool = False) -> None:
         self.num_nodes = num_nodes
         self.directed = directed
-        self.nodes = [GNode(str(i), []) for i in range(1, self.num_nodes + 1)]
+        self.nodes = [GNode(i, []) for i in range(1, self.num_nodes + 1)]
         self.adj_list = {node: set() for node in self.nodes}
 
     def add_edge(self, node1: GNode, node2: GNode, weight: int = 0) -> None:
