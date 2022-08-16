@@ -29,7 +29,7 @@ def create(numNodes, names, baseName):
     print("Setup Completed")
 
     print("#####################################################")
-    d_names = ["device_node1_1", "device_node2_1"]
+    d_names = [f"device_node{i}_1" for i in range(1, numNodes + 1)]
 
     #for i in range(numNodes):
     #    subprocess.call(
@@ -55,7 +55,7 @@ def create(numNodes, names, baseName):
     
 
 def ns3(numNodes, baseName):
-    totalTime = (5 * 60) * numNodes
+    totalTime = (10 * 60) * numNodes
 
     print("######################################################")
 
@@ -78,7 +78,7 @@ def emulate(numNodes, names):
     print("#####################################################")
     print("Starting Simulation")
     print("#####################################################")
-    d_names = ["device_node1_1", "device_node2_1"]
+    d_names = [f"device_node{i}_1" for i in range(1, numNodes + 1)]
 
     for i in range(numNodes):
         subprocess.call(
@@ -102,7 +102,7 @@ def destroy(numNodes, names):
     print("Destroying Docker Containers")
 
     print("#####################################################")
-    d_names = ["device_node1_1", "device_node2_1"]
+    d_names = [f"device_node{i}_1" for i in range(1, numNodes + 1)]
     for i in range(numNodes):
         subprocess.call(
             "sudo docker stop %s && sudo docker rm %s" % (d_names[i], d_names[i]), shell=True
