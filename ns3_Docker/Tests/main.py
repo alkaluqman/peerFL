@@ -1,3 +1,4 @@
+from posixpath import basename
 import subprocess
 import os
 import yaml
@@ -5,6 +6,13 @@ from argparse import ArgumentParser
 import time
 
 def create(numNodes, names, baseName):
+    curr_dir = os.getcwd()
+
+    subprocess.call("cd /home/sasuke/repos/p2pFLsim/Device/ && sudo docker-compose up -d")
+
+    print("#####################################################")
+    print("Docker Container Started")
+    print("#####################################################")
 
     for i in range(numNodes):
         subprocess.call("sudo bash ./setup.sh %s" % names[i], shell = True)
@@ -21,20 +29,20 @@ def create(numNodes, names, baseName):
     print("Setup Completed")
 
     print("#####################################################")
+    d_names = ["device_node1_1", "device_node2_1"]
 
+    #for i in range(numNodes):
+    #    subprocess.call(
+    #        "sudo docker run --privileged -dit --net=none -v /home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/all_data/saved_data_client_%s:/usr/thisdocker/dataset:rw --name %s %s" % (str(i + 1), d_names[i], "base"), shell = True
+    #    )
+
+    #print("#####################################################")
+
+    #print("Docker Container Started")
+
+    #print("#####################################################")
     for i in range(numNodes):
-        subprocess.call(
-            "sudo docker run --privileged -dit --net=none --name %s %s" % (names[i], "ns3base"), shell = True
-        )
-
-    print("#####################################################")
-
-    print("Docker Container Started")
-
-    print("#####################################################")
-
-    for i in range(numNodes):
-        subprocess.call("sudo bash ./container.sh %s %s" % (names[i], i), shell = True)
+        subprocess.call("sudo bash ./container.sh %s %s % s" % (names[i], i, d_names[i]), shell = True)
 
 
     print("#####################################################")
@@ -46,8 +54,8 @@ def create(numNodes, names, baseName):
     return
     
 
-def ns3(numNodes):
-    total_emu_time = (5 * 60) * numNodes
+def ns3(numNodes, baseName):
+    totalTime = (5 * 60) * numNodes
 
     print("######################################################")
 
@@ -56,7 +64,7 @@ def ns3(numNodes):
     print("######################################################")
 
     subprocess.Popen(
-        "cd home/sasuke/repos/bake/source/ns-3.32/ && sudo ./waf --pyrun /home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/tap-wifi-virtual-machine.py"
+        "cd /home/sasuke/repos/bake/source/ns-3.32/ && sudo ./waf --pyrun \"/home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/tap-wifi-virtual-machine.py --numNodes=%s --totalTime=%s --baseName=%s\"" % (str(numNodes), str(totalTime), baseName)
         ,shell = True
         )
 
@@ -67,16 +75,16 @@ def ns3(numNodes):
 
 
 def emulate(numNodes, names):
-    #Starting  Sim
+    print("#####################################################")
+    print("Starting Simulation")
+    print("#####################################################")
+    d_names = ["device_node1_1", "device_node2_1"]
 
-    for  i in range(0, numNodes):
+    for i in range(numNodes):
         subprocess.call(
-            "sudo docker restart -t 0 %s" % names[i], shell = True
+            f"sudo docker exec -d {d_names[i]} python peer.py"
         )
-    
-    for i in range(0, numNodes):
-        subprocess.call("sudo bash ./container.sh %s %s" % (names[i], i), shell = True)
-    
+    #print(process.stdout)
     return 
 
     
@@ -94,10 +102,10 @@ def destroy(numNodes, names):
     print("Destroying Docker Containers")
 
     print("#####################################################")
-
+    d_names = ["device_node1_1", "device_node2_1"]
     for i in range(numNodes):
         subprocess.call(
-            "sudo docker stop %s && sudo docker rm %s" % (names[i], names[i]), shell=True
+            "sudo docker stop %s && sudo docker rm %s" % (d_names[i], d_names[i]), shell=True
         )
 
     print("#####################################################")
@@ -125,12 +133,13 @@ def main():
     parser.add_argument("-n", "--number", type = int, action = "store", default = 2)
     parser.add_argument("-t", "--time", type = int, action = "store", default = 10)
     parser.add_argument("-op", "--operation", type = str, required=True)
+    parser.add_argument("-bn", "--basename", type = str, action="store", default="Node")
     args = parser.parse_args()
 
     numNodes = args.number
     emuTime = args.time
     names = []
-    baseName = "Node"
+    baseName = args.basename
 
     for i in range(0, numNodes):
         names.append(baseName + str(i + 1))
@@ -139,7 +148,7 @@ def main():
     if operation == "create":
         create(numNodes, names, baseName)
     elif operation == "ns3":
-        ns3()
+        ns3(numNodes, baseName)
     elif operation == "emulation":
         emulate(numNodes, names)
     elif operation == "destroy":

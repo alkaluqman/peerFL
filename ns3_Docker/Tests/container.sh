@@ -15,10 +15,17 @@ if [ -z "$2" ]
     exit 1
 fi
 
+if [ -z "$3" ]
+  then
+    echo "No docker name supplied"
+    exit 1
+fi
+D_NAME=$3
+
 NAME=$1
 SIDE_A=side-int-$NAME
 SIDE_B=side-ext-$NAME
-PID=$(docker inspect --format '{{ .State.Pid }}' $NAME)
+PID=$(docker inspect --format '{{ .State.Pid }}' $D_NAME)
 #PID=$2
 BRIDGE=br-$NAME
 INDEX=$2

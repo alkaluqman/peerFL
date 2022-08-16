@@ -5,46 +5,86 @@ services:
         environment:
             - PYTHONUNBUFFERED=1
             - ORIGIN=node1
-            - PEERS=[]
+            - PEERS=["node2"]   #,"node6"]
         volumes:
             - ./all_data/saved_data_client_1:/usr/thisdocker/dataset:rw
+        privileged: true
+        ports:
+            - "5555"
+        network_mode: none
+        stdin_open: true
+        tty: true
     node2:
         build: ./peer/
         environment:
             - PYTHONUNBUFFERED=1
             - ORIGIN=node2
-            - PEERS=[]
+            - PEERS=["node1"] #6
         volumes:
             - ./all_data/saved_data_client_2:/usr/thisdocker/dataset:rw
-    node3:
-        build: ./peer/
-        environment:
-            - PYTHONUNBUFFERED=1
-            - ORIGIN=node3
-            - PEERS=[]
-        volumes:
-            - ./all_data/saved_data_client_3:/usr/thisdocker/dataset:rw
-    node4:
-        build: ./peer/
-        environment:
-            - PYTHONUNBUFFERED=1
-            - ORIGIN=node4
-            - PEERS=[]
-        volumes:
-            - ./all_data/saved_data_client_4:/usr/thisdocker/dataset:rw
-    node5:
-        build: ./peer/
-        environment:
-            - PYTHONUNBUFFERED=1
-            - ORIGIN=node5
-            - PEERS=[]
-        volumes:
-            - ./all_data/saved_data_client_5:/usr/thisdocker/dataset:rw
-    node6:
-        build: ./peer/
-        environment:
-            - PYTHONUNBUFFERED=1
-            - ORIGIN=node6
-            - PEERS=[]
-        volumes:
-            - ./all_data/saved_data_client_6:/usr/thisdocker/dataset:rw
+        privileged: true
+        ports:
+            - "5555"
+        network_mode: none
+        stdin_open: true
+        tty: true
+#    node3:
+#        build: ./peer/
+#        environment:
+#            - PYTHONUNBUFFERED=1
+#            - ORIGIN=node3
+#            - PEERS=["node7"]
+#        volumes:
+#            - ./all_data/saved_data_client_3:/usr/thisdocker/dataset:rw
+#        ports:
+#            - "5555"
+#        network_mode: none
+#        tty: true
+#    node4:
+#        build: ./peer/
+#        environment:
+#            - PYTHONUNBUFFERED=1
+#            - ORIGIN=node4
+#            - PEERS=["node1","node5"]
+#        volumes:
+#            - ./all_data/saved_data_client_4:/usr/thisdocker/dataset:rw
+#        ports:
+#            - "5555"
+#        network_mode: none
+#        tty: true
+#    node5:
+#        build: ./peer/
+#        environment:
+#            - PYTHONUNBUFFERED=1
+#            - ORIGIN=node5
+#            - PEERS=["node2"]
+#        volumes:
+#            - ./all_data/saved_data_client_5:/usr/thisdocker/dataset:rw
+#        ports:
+#            - "5555"
+#        network_mode: none
+#        tty: true
+#    node6:
+#        build: ./peer/
+#        environment:
+#            - PYTHONUNBUFFERED=1
+#            - ORIGIN=node6
+#            - PEERS=["node4","node5"]
+#        volumes:
+#            - ./all_data/saved_data_client_6:/usr/thisdocker/dataset:rw
+#        ports:
+#            - "5555"
+#        network_mode: none
+#        tty: true
+#    node7:
+#        build: ./peer/
+#        environment:
+#            - PYTHONUNBUFFERED=1
+#            - ORIGIN=node7
+#            - PEERS=["node2"]
+#        volumes:
+#            - ./all_data/saved_data_client_7:/usr/thisdocker/dataset:rw
+#        ports:
+#            - "5555"
+#        network_mode: none
+#        tty: true

@@ -104,11 +104,11 @@ def main():
                 # This node is router and sending node is dealer
                 rcvd_from = this_node.receive_model(to_node ,from_node)
                 print("%sReceived object %s at iteration %s" % (this_node.log_prefix, str(this_node.local_model), str(i)))
-
+                
                 this_node.save_model()
 
                 # Logging iteration and prev_node for audit
-                this_node.local_history.append({"iteration":i, "prev_node":rcvd_from.decode("utf-8")})
+                this_node.local_history.append({"iteration":i, "prev_node":from_node})
 
     # this_node.print_node_details()
 

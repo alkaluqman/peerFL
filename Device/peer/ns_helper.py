@@ -48,7 +48,6 @@ def recv_zipped_pickle(s, from_node ,size = 1024*1024):
         else:
             break
     #p = zlib.decompress(msg)
-    print(pickle.loads(msg))
     return pickle.loads(msg)
 
 
