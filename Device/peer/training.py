@@ -17,17 +17,17 @@ class SimpleMLP:
 
     @staticmethod
     def build(shape, classes, only_digits=True):
-        base_model_1 = VGG16(include_top=False, input_shape=shape, classes=classes)
+        #base_model_1 = VGG16(include_top=False, input_shape=shape, classes=classes)
         model_1 = Sequential()
-        model_1.add(base_model_1)  # Adds the base model (in this case vgg19 to model_1)
+        #model_1.add(base_model_1)  # Adds the base model (in this case vgg19 to model_1)
         model_1.add(
             Flatten())  # Since the output before the flatten layer is a matrix we have to use this function to get a
         # vector of the form nX1 to feed it into the fully connected layers
         # Add the Dense layers along with activation and batch normalization
-        model_1.add(Dense(1024, activation=('relu'), input_dim=512))
-        model_1.add(Dense(512, activation=('relu')))
-        model_1.add(Dense(256, activation=('relu')))
-        # model_1.add(Dropout(.3))#Adding a dropout layer that will randomly drop 30% of the weights
+        #model_1.add(Dense(1024, activation=('relu'), input_dim=512))
+        #model_1.add(Dense(512, activation=('relu')))
+        #model_1.add(Dense(256, activation=('relu')))
+        ## model_1.add(Dropout(.3))#Adding a dropout layer that will randomly drop 30% of the weights
         model_1.add(Dense(128, activation=('relu')))
         # model_1.add(Dropout(.2))
         model_1.add(Dense(10, activation=('softmax')))  # This is the classification layer
@@ -75,10 +75,10 @@ def sum_scaled_weights(scaled_weight_list):
     return avg_grad
 
 
-def load_client_dataset(client_num):
+def load_client_dataset():
     # basepath = os.path.join(os.getcwd(), "all_data")
     # client_path = os.path.join(basepath, "saved_data_client_"+str(client_num))
-    client_path = "/home/sasuke/repos/p2pFLsim/all_data/" + "saved_data_client_" + str(client_num) #"/usr/thisdocker/dataset"
+    client_path = "/usr/thisdocker/dataset"
     print("[INFO] Loading from {} ".format(client_path))
     new_dataset = tf.data.experimental.load(client_path)
     return new_dataset
@@ -89,7 +89,7 @@ def local_training(client_num, local_model, build_flag):
     # Load client dataset from volume mounted folder
     # client_num = 1
     log_prefix = "[" + str(client_num).upper() + "] "
-    local_dataset = load_client_dataset(client_num)
+    local_dataset = load_client_dataset()
     x = local_dataset.element_spec[0].shape[1]
     y = local_dataset.element_spec[0].shape[2]
     z = local_dataset.element_spec[0].shape[3]
