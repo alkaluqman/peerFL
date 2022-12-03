@@ -4,11 +4,12 @@ import os
 import yaml
 from argparse import ArgumentParser
 import time
+import json
 
 def create(numNodes, names, baseName):
     curr_dir = os.getcwd()
 
-    subprocess.call("cd /home/sasuke/repos/p2pFLsim/Device/ && sudo docker-compose up -d")
+    subprocess.call("cd /home/sasuke/repos/p2pFLsim/Device/ && sudo docker-compose up -d", shell=True)
 
     print("#####################################################")
     print("Docker Container Started")
@@ -74,16 +75,21 @@ def ns3(numNodes, baseName):
     
 
 
-def emulate(numNodes, names):
+def emulate(numNodes, lastNode):
     print("#####################################################")
     print("Starting Simulation")
     print("#####################################################")
     d_names = [f"device_node{i}_1" for i in range(1, numNodes + 1)]
 
     for i in range(numNodes):
-        subprocess.call(
-            f"sudo docker exec -d {d_names[i]} python peer.py"
-        )
+        if i + 1 != lastNode:
+            subprocess.call(
+                f"sudo docker exec -d {d_names[i]} python peer.py", shell=True
+            )
+    subprocess.call(
+        f"sudo docker exec {d_names[lastNode-1]} python peer.py", shell=True
+    )
+        
     #print(process.stdout)
     return 
 
@@ -141,6 +147,8 @@ def main():
     names = []
     baseName = args.basename
 
+    comm_template = json.load(open('/home/sasuke/repos/p2pFLsim/Device/peer/comm_template.json'))
+    lastNode = int(comm_template[list(comm_template.keys())[-1]]["to"])
     for i in range(0, numNodes):
         names.append(baseName + str(i + 1))
 
@@ -149,8 +157,8 @@ def main():
         create(numNodes, names, baseName)
     elif operation == "ns3":
         ns3(numNodes, baseName)
-    elif operation == "emulation":
-        emulate(numNodes, names)
+    elif operation == "emulate":
+        emulate(numNodes, lastNode)
     elif operation == "destroy":
         destroy(numNodes, names)
     else:

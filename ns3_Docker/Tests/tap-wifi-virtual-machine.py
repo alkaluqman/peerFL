@@ -30,7 +30,7 @@ cmd = ns.core.CommandLine()
 cmd.numNodes = 2
 cmd.totalTime = 600
 cmd.baseName = "Node"
-cmd.payLoad = 1472
+cmd.payLoad = 1000000
 
 cmd.AddValue("numNodes", "Number of nodes/devices")
 cmd.AddValue("totalTime", "Total simulation time")
@@ -71,11 +71,12 @@ nodes.Create (numNodes)
 #
 wifi = ns.wifi.WifiHelper()
 wifi.SetStandard (ns.wifi.WIFI_STANDARD_80211a)
-wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", ns.core.StringValue ("OfdmRate6Mbps"))
+wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", ns.core.StringValue ("OfdmRate54Mbps"))
 
 #
 # No reason for pesky access points, so we'll use an ad-hoc network.
 #
+
 wifiMac = ns.wifi.WifiMacHelper()
 wifiMac.SetType ("ns3::AdhocWifiMac")
 
@@ -98,7 +99,8 @@ devices = wifi.Install(wifiPhy, wifiMac, nodes)
 mobility = ns.mobility.MobilityHelper()
 positionAlloc = ns.mobility.ListPositionAllocator()
 positionAlloc.Add(ns.core.Vector(0.0, 0.0, 0.0))
-positionAlloc.Add(ns.core.Vector(5.0, 0.0, 0.0))
+for i in range(1, numNodes):
+    positionAlloc.Add(ns.core.Vector(float(i), 0.0, 0.0))
 mobility.SetPositionAllocator(positionAlloc)
 mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel")
 mobility.Install(nodes)
