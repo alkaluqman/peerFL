@@ -3,7 +3,9 @@ import zmq
 import ns_helper
 import json, joblib
 import ast
+import numpy as np
 import training, inference
+import _thread
 
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
@@ -53,10 +55,33 @@ class Node:
             print("%sERROR establishing socket for to-node" % self.log_prefix)
 
     def receive_model(self, to_node, from_node):
-        self.out_connection[to_node] = ns_helper.act_as_client()
-        self.local_model = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)  # Reads model object
+        if not from_node and self.peers:
+            time.sleep(2)
+            self.in_connection  = ns_helper.act_as_client()
+            self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, self.peers[0])
+            self.avg_weights = np.array(self.local_model.get_weights())
+            self.in_connection.close()
+            for client in self.peers[1:]:
+                self.in_connection = ns_helper.act_as_client()
+                self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, client)
+                self.avg_weights = np.add(self.avg_weights, np.array(self.local_model.get_weights()))
+                self.in_connection.close()
+            self.avg_weights = self.avg_weights/len(self.peers)
+            self.local_model.set_weights(self.avg_weights.tolist())
+            self.in_connection = ns_helper.act_as_server(self.node_id)
+            ### Receive total model
+            for i in self.peers:
+                _thread.start_new_thread(self.send_model, ())
+            
+        else:
+            self.out_connection[to_node] = ns_helper.act_as_client()
+            self.local_model = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)  # Reads model object
         # self.local_model = self.in_connection.recv_string()
         return from_node
+
+    def final_recv(self, to_node, from_node):
+        self.out_connection[to_node] = ns_helper.act_as_client()
+        self.local_model = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)
 
     def training_step(self, step):
         # local model training
@@ -79,36 +104,53 @@ def main():
     # Read comm template config file
     comm_template = json.load(open('comm_template.json'))
     total_rounds = len(comm_template.keys())
+    Central = True #### HARDCODED
+    if Central:
+        server_node = "node1" #### HARDCODED
+        if this_node.node_id == server_node:
+            rcvd_from = this_node.receive_model(server_node, None)
+            this_node.save_model()
+            this_node.inference_step()
+        else:
+            this_node.training_step(1)
+            this_node.send_model()
+            while True:
+                try:
+                    this_node.final_recv(this_node.node_id, server_node)
+                    break
+                except ConnectionRefusedError:
+                    pass
 
-    for i in range(1, total_rounds + 2):
-        if i == total_rounds+1 :
-            if this_node.node_id == "node"+str(comm_template[str(total_rounds)]["to"]):
-                # Last node training
-                this_node.training_step(i)
-                # Global accuracy
-                this_node.inference_step()
-        else :
-            
-            ith_round = comm_template[str(i)]
-            from_node = "node" + str(ith_round["from"])
-            to_node = "node" + str(ith_round["to"])
-            if node_id == from_node:
-                # This node is dealer and receiving node is router
-                training_start = time.process_time()
-                this_node.training_step(i)
-                print("%sTime : Training Step = %s" % (this_node.log_prefix, str(time.process_time() - training_start)))
-
-                print("%sSending iteration %s from %s to %s" % (this_node.log_prefix, str(i), from_node, to_node))
-                this_node.send_model()
-            elif node_id == to_node:
-                # This node is router and sending node is dealer
-                rcvd_from = this_node.receive_model(to_node ,from_node)
-                print("%sReceived object %s at iteration %s" % (this_node.log_prefix, str(this_node.local_model), str(i)))
+    else:
+        for i in range(1, total_rounds + 2):
+            if i == total_rounds+1 :
+                if this_node.node_id == "node"+str(comm_template[str(total_rounds)]["to"]):
+                    # Last node training
+                    this_node.training_step(i)
+                    # Global accuracy
+                    this_node.inference_step()
+            else :
                 
-                this_node.save_model()
+                ith_round = comm_template[str(i)]
+                from_node = "node" + str(ith_round["from"])
+                to_node = "node" + str(ith_round["to"])
+                if node_id == from_node:
+                    # This node is dealer and receiving node is router
+                    training_start = time.process_time()
+                    this_node.training_step(i)
+                    print("%sTime : Training Step = %s" % (this_node.log_prefix, str(time.process_time() - training_start)))
 
-                # Logging iteration and prev_node for audit
-                this_node.local_history.append({"iteration":i, "prev_node":from_node})
+                    print("%sSending iteration %s from %s to %s" % (this_node.log_prefix, str(i), from_node, to_node))
+                    this_node.send_model()
+                elif node_id == to_node:
+                    # This node is router and sending node is dealer
+                    rcvd_from = this_node.receive_model(to_node ,from_node)
+                    print("%sReceived object %s at iteration %s" % (this_node.log_prefix, str(this_node.local_model), str(i)))
+                    
+                    this_node.save_model()
+
+                    # Logging iteration and prev_node for audit
+                    this_node.local_history.append({"iteration":i, "prev_node":from_node})
 
     # this_node.print_node_details()
 
