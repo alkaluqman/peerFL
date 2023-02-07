@@ -5,12 +5,12 @@ import json, joblib
 import ast
 import numpy as np
 import training, inference
-import _thread
-
+from threading import Thread
+import yaml
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
 
-    def __init__(self, node_id, peers):
+    def __init__(self, node_id, peers, server = False):
         self.node_id = node_id
         self.peers = peers
         self.log_prefix = "[" + str(node_id).upper() + "] "
@@ -18,11 +18,14 @@ class Node:
         self.out_connection = {}
         self.local_model = None  # local model
         self.local_history = None
-        self.initialize_node()
+        self.initialize_node(server)
 
-    def initialize_node(self):
+    def initialize_node(self, server = False):
         """Creates one zmq.ROUTER socket as incoming connection and n number
         of zmq.DEALER sockets as outgoing connections as per adjacency matrix"""
+        if server:
+            self.local_model = training.build_model(self.node_id, self.local_model, True)
+            
         self.local_history = []
         self.in_connection = ns_helper.act_as_server(self.node_id) # Server_node
         if len(self.peers) > 0:
@@ -54,24 +57,56 @@ class Node:
         except Exception as e:
             print("%sERROR establishing socket for to-node" % self.log_prefix)
 
+    def avg_weights(self, avg_weights, peer):
+        in_connection = ns_helper.act_as_client()
+        while True:
+            try:
+                local_model = ns_helper.recv_zipped_pickle(in_connection, peer)
+                break
+            except (ConnectionRefusedError, ConnectionAbortedError):
+                pass
+                
+        avg_weights.append(np.array(local_model.get_weights()))
+        in_connection.close()
+
     def receive_model(self, to_node, from_node):
+
         if not from_node and self.peers:
-            time.sleep(2)
-            self.in_connection  = ns_helper.act_as_client()
-            self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, self.peers[0])
-            self.avg_weights = np.array(self.local_model.get_weights())
-            self.in_connection.close()
-            for client in self.peers[1:]:
-                self.in_connection = ns_helper.act_as_client()
-                self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, client)
-                self.avg_weights = np.add(self.avg_weights, np.array(self.local_model.get_weights()))
-                self.in_connection.close()
-            self.avg_weights = self.avg_weights/len(self.peers)
-            self.local_model.set_weights(self.avg_weights.tolist())
-            self.in_connection = ns_helper.act_as_server(self.node_id)
+            
+            average_weights=self.local_model.get_weights()
+            average_weights = np.array(average_weights)
+            avg_wt = []
+            average_weights.fill(0)
+            t = []
+            for peer in self.peers:
+                t.append(Thread(target=self.avg_weights, args=(avg_wt, peer)))
+                print(peer)
+            for thread in t:
+                thread.start()
+            for thread in t:
+                thread.join()
+            #self.in_connection  = ns_helper.act_as_client()
+            #self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, self.peers[0])
+            #self.avg_weights = np.array(self.local_model.get_weights())
+            #self.in_connection.close()
+            #for client in self.peers[1:]:
+            #    self.in_connection = ns_helper.act_as_client()
+            #    self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, client)
+            #    self.avg_weights = np.add(self.avg_weights, np.array(self.local_model.get_weights()))
+            #    self.in_connection.close()
+            for wt in avg_wt:
+                average_weights = np.add(average_weights, wt)
+            average_weights = average_weights/len(self.peers)
+            self.local_model.set_weights(average_weights.tolist())
             ### Receive total model
+            t = []
             for i in self.peers:
-                _thread.start_new_thread(self.send_model, ())
+                #self.send_model()
+                t.append(Thread(target = self.send_model, args = ()))
+            for thread in t:
+                thread.start()
+            for thread in t:
+                thread.join()
             
         else:
             self.out_connection[to_node] = ns_helper.act_as_client()
@@ -97,29 +132,37 @@ class Node:
 def main():
     """main function"""
     context = zmq.Context()  # We should only have 1 context which creates any number of sockets
+    ops = yaml.safe_load(open("./config.yml", "r"))
+    server_node = ops["server"]
     node_id = os.environ["ORIGIN"]
     peers_list = ast.literal_eval(os.environ["PEERS"])
-    this_node = Node(node_id, peers_list)
+    this_node = Node(node_id, peers_list, server=(server_node == node_id))
 
     # Read comm template config file
     comm_template = json.load(open('comm_template.json'))
     total_rounds = len(comm_template.keys())
-    Central = True #### HARDCODED
+    
+    Central = ops['central'] 
     if Central:
-        server_node = "node1" #### HARDCODED
-        if this_node.node_id == server_node:
-            rcvd_from = this_node.receive_model(server_node, None)
-            this_node.save_model()
-            this_node.inference_step()
-        else:
-            this_node.training_step(1)
-            this_node.send_model()
-            while True:
-                try:
-                    this_node.final_recv(this_node.node_id, server_node)
-                    break
-                except ConnectionRefusedError:
-                    pass
+        for i in range(1, total_rounds + 1):
+            if this_node.node_id == server_node:
+                while True:
+                    try:
+                        rcvd_from = this_node.receive_model(server_node, None)
+                        break
+                    except ConnectionRefusedError:
+                        pass
+                this_node.save_model()
+                this_node.inference_step()
+            else:
+                this_node.training_step(i)
+                this_node.send_model()
+                while True:
+                    try:
+                        this_node.final_recv(this_node.node_id, server_node)
+                        break
+                    except ConnectionRefusedError:
+                        pass
 
     else:
         for i in range(1, total_rounds + 2):
