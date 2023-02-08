@@ -6,3 +6,4 @@ nodes:
   - ["node2", "node3"]
   - ["node1", "node3"]
   - ["node1", "node2"]
+total_rounds: 1
