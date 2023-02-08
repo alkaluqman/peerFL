@@ -179,6 +179,10 @@ def main():
     baseName = args.basename
     ops = yaml.safe_load(open(args.path, "r"))
     central = ops['central']
+
+    subprocess.call("python comm_template_helper.py", shell = True)
+    subprocess.call("python docker_compose_helper.py", shell = True)
+    
     comm_template = json.load(open('/home/sasuke/repos/p2pFLsim/Device/peer/comm_template.json'))
     lastNode = int(comm_template[list(comm_template.keys())[-1]]["to"])
     for i in range(0, numNodes):
