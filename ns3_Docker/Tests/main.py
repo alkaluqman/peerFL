@@ -5,9 +5,15 @@ import yaml
 from argparse import ArgumentParser
 import time
 import json
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
+
 #, "2": {"from": "2", "to": "3"}, "3": {"from": "3", "to": "4"}}
 def create(numNodes, names, baseName):
     curr_dir = os.getcwd()
+
+    for i in range(1, numNodes+1):
+        name = f"./Device/all_data/saved_data_client_{i}"
+        subprocess.call(f"cd ../../ && cp -r ./base_model {name}", shell=True)
 
     subprocess.call("cd /home/sasuke/repos/p2pFLsim/Device/ && sudo docker-compose up -d", shell=True)
 
@@ -179,6 +185,9 @@ def main():
     baseName = args.basename
     ops = yaml.safe_load(open(args.path, "r"))
     central = ops['central']
+
+    base_model = MobileNetV2(include_top=False, input_shape=(224,224,3), classes=10)
+    base_model.save("../../base_model")
 
     subprocess.call("python comm_template_helper.py", shell = True)
     subprocess.call("python docker_compose_helper.py", shell = True)
