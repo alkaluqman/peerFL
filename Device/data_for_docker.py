@@ -4,6 +4,7 @@ import os
 from tensorflow.keras.datasets import cifar10
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
+import argparse
 #from matplotlib import pyplot as plt
 
 def load_dataset():
@@ -90,7 +91,11 @@ def load_clients(num_clients):
 
 if __name__ == '__main__':
     # Create clients and save each dataset
-    create_and_save_clients()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num_clients", "-n", default=10, help="Number of Clients")
+    args = parser.parse_args()
+
+    create_and_save_clients(args.num_clients)
 
 
     # Load back and check client datasets

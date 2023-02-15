@@ -6,10 +6,17 @@ from argparse import ArgumentParser
 import time
 import json
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
+os.environ["TF_CPP_MIN_lOG_LEVEL"] = '3'
 
 #, "2": {"from": "2", "to": "3"}, "3": {"from": "3", "to": "4"}}
 def create(numNodes, names, baseName):
     curr_dir = os.getcwd()
+
+    print("#####################################################")
+    print("Generating Data")
+    print("#####################################################")    
+    
+    subprocess.call(f"cd ../../Device/ && python data_for_docker.py -n {numNodes}", shell=True, stdout=subprocess.DEVNULL)
 
     for i in range(1, numNodes+1):
         name = f"./Device/all_data/saved_data_client_{i}"
@@ -160,6 +167,14 @@ def destroy(numNodes, names):
         subprocess.call(
             "sudo bash ./destroy.sh %s" % (names[i]), shell = True
         )
+
+    print("#####################################################")
+
+    print("Removing Local Data")
+
+    print("#####################################################")
+
+    subprocess.call("cd ../../Device && rm -rf ./all_data", shell=True)
 
     print("#####################################################")
 
