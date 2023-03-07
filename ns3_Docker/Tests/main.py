@@ -1,12 +1,14 @@
 from posixpath import basename
 import subprocess
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import yaml
 from argparse import ArgumentParser
 import time
 import json
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
-os.environ["TF_CPP_MIN_lOG_LEVEL"] = '3'
+import tensorflow as tf
+
 
 #, "2": {"from": "2", "to": "3"}, "3": {"from": "3", "to": "4"}}
 def create(numNodes, names, baseName):
@@ -14,7 +16,10 @@ def create(numNodes, names, baseName):
 
     print("#####################################################")
     print("Generating Data")
-    print("#####################################################")    
+    print("#####################################################")
+
+    base_model = MobileNetV2(include_top=False, weights='imagenet', input_shape=(32,32,3), classes=10)
+    base_model.save("../../base_model")    
     
     subprocess.call(f"cd ../../Device/ && python data_for_docker.py -n {numNodes}", shell=True, stdout=subprocess.DEVNULL)
 
@@ -22,7 +27,7 @@ def create(numNodes, names, baseName):
         name = f"./Device/all_data/saved_data_client_{i}"
         subprocess.call(f"cd ../../ && cp -r ./base_model {name}", shell=True)
 
-    subprocess.call("cd /home/sasuke/repos/p2pFLsim/Device/ && sudo docker-compose up -d", shell=True)
+    subprocess.call("cd ../../Device/ && sudo docker-compose up -d", shell=True)
 
     print("#####################################################")
     print("Docker Container Started")
@@ -69,7 +74,7 @@ def create(numNodes, names, baseName):
     return
     
 
-def ns3(numNodes, baseName):
+def ns3(numNodes, baseName, ns3Path):
     totalTime = (100 * 60) * numNodes
 
     print("######################################################")
@@ -79,7 +84,7 @@ def ns3(numNodes, baseName):
     print("######################################################")
 
     subprocess.Popen(
-        "cd /home/sasuke/repos/bake/source/ns-3.32/ && sudo ./waf --pyrun \"/home/sasuke/repos/p2pFLsim/ns3_Docker/Tests/tap-wifi-virtual-machine.py --numNodes=%s --totalTime=%s --baseName=%s\"" % (str(numNodes), str(totalTime), baseName)
+        f"cd {ns3Path} && sudo ./waf --pyrun \"%s --numNodes=%s --totalTime=%s --baseName=%s\"" % (os.path.join(os.getcwd(), "tap-wifi-virtual-machine.py"), str(numNodes), str(totalTime), baseName)
         ,shell = True
         )
 
@@ -107,7 +112,7 @@ def emulate(numNodes, lastNode, central=False, server=None):
             f"sudo docker exec {d_names[0]} python peer.py", shell=True
         )
         tot_time = time.time() - start_time
-        print(tot_time)
+        print(f"TOTAL TIME TAKEN: {tot_time}")
     
     else:
         d_names = [f"device_node{i}_1" for i in range(1, numNodes + 1)]
@@ -116,14 +121,14 @@ def emulate(numNodes, lastNode, central=False, server=None):
         for i in range(numNodes):
             if i + 1 != lastNode:
                 subprocess.call(
-                    f"sudo docker exec -d {d_names[i]} python peer.py", shell=True
+                    f"sudo docker exec -d {d_names[i]} sudo bash ./network_config.sh", shell=True
                 )
         
         subprocess.call(
-            f"sudo docker exec {d_names[lastNode-1]} python peer.py", shell=True
+            f"sudo docker exec {d_names[lastNode-1]} sudo bash ./network_config.sh", shell=True
         )
         tot_time = time.time() - start_time
-        print(tot_time)
+        print(f"TOTAL TIME TAKEN: {tot_time}")
     return 
 
     
@@ -187,27 +192,26 @@ def destroy(numNodes, names):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("-n", "--number", type = int, action = "store", default = 2)
     parser.add_argument("-t", "--time", type = int, action = "store", default = 10)
     parser.add_argument("-op", "--operation", type = str, required=True)
-    parser.add_argument("-bn", "--basename", type = str, action="store", default="Node")
-    parser.add_argument("-p", "--path", type=str, default="../../config.yml")
+    parser.add_argument("-bn", "--baseName", type = str, action="store", default="Node")
+    parser.add_argument("-p", "--path", type=str, default="../../Device/peer/config.yml")
+    parser.add_argument("-nsp", "--ns3Path", type=str, default="/home/sasuke/repos/bake/source/ns-3.32/")
     args = parser.parse_args()
 
-    numNodes = args.number
+    
     emuTime = args.time
     names = []
-    baseName = args.basename
+    baseName = args.baseName
     ops = yaml.safe_load(open(args.path, "r"))
     central = ops['central']
-
-    base_model = MobileNetV2(include_top=False, input_shape=(224,224,3), classes=10)
-    base_model.save("../../base_model")
+    numNodes = ops['n']
+    
 
     subprocess.call("python comm_template_helper.py", shell = True)
     subprocess.call("python docker_compose_helper.py", shell = True)
     
-    comm_template = json.load(open('/home/sasuke/repos/p2pFLsim/Device/peer/comm_template.json'))
+    comm_template = json.load(open('../../Device/peer/comm_template.json'))
     lastNode = int(comm_template[list(comm_template.keys())[-1]]["to"])
     for i in range(0, numNodes):
         names.append(baseName + str(i + 1))
@@ -216,7 +220,7 @@ def main():
     if operation == "create":
         create(numNodes, names, baseName)
     elif operation == "ns3":
-        ns3(numNodes, baseName)
+        ns3(numNodes, baseName, args.ns3Path)
     elif operation == "emulate":
         emulate(numNodes, lastNode, central)
     elif operation == "destroy":
