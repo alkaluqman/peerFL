@@ -3,7 +3,6 @@ import tensorflow as tf
 from sklearn.metrics import accuracy_score
 import numpy as np
 
-tf.config.set_visible_devices([], 'GPU')
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D

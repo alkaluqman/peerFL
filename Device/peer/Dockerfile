@@ -5,9 +5,12 @@ COPY training.py ./training.py
 COPY inference.py ./inference.py
 COPY saved_data_test /usr/thisdocker/testset
 COPY comm_template.json ./comm_template.json
+COPY config.yml ./config.yml
+COPY network_config.sh ./network_config.sh
 
 RUN pip install pyzmq
 RUN apt-get update
+RUN apt-get install -y iproute2
 RUN apt-get install -y iputils-ping
 RUN apt-get -y install net-tools
 RUN apt-get install -y iperf

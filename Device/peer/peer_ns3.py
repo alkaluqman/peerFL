@@ -7,6 +7,7 @@ import numpy as np
 import training, inference
 from threading import Thread
 import yaml
+
 class Node:
     """A peer-to-peer node that can act as client or server at each round"""
 
@@ -52,7 +53,7 @@ class Node:
 
     def send_model(self):
         try:
-            ns_helper.send_zipped_pickle(self.in_connection, self.local_model)
+            ns_helper.send_zipped_pickle(self.in_connection, np.array(self.local_model.get_weights()))
             # self.out_connection[to_node].send_string(self.local_model)
         except Exception as e:
             print("%sERROR establishing socket for to-node" % self.log_prefix)
@@ -65,9 +66,8 @@ class Node:
                 break
             except (ConnectionRefusedError, ConnectionAbortedError):
                 pass
-                
-        avg_weights.append(np.array(local_model.get_weights()))
-        in_connection.close()
+        #print(type(local_model))
+        avg_weights.append(local_model)
 
     def receive_model(self, to_node, from_node):
 
@@ -85,23 +85,15 @@ class Node:
                 thread.start()
             for thread in t:
                 thread.join()
-            #self.in_connection  = ns_helper.act_as_client()
-            #self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, self.peers[0])
-            #self.avg_weights = np.array(self.local_model.get_weights())
-            #self.in_connection.close()
-            #for client in self.peers[1:]:
-            #    self.in_connection = ns_helper.act_as_client()
-            #    self.local_model = ns_helper.recv_zipped_pickle(self.in_connection, client)
-            #    self.avg_weights = np.add(self.avg_weights, np.array(self.local_model.get_weights()))
-            #    self.in_connection.close()
             for wt in avg_wt:
                 average_weights = np.add(average_weights, wt)
             average_weights = average_weights/len(self.peers)
             self.local_model.set_weights(average_weights.tolist())
+           
             ### Receive total model
+           
             t = []
             for i in self.peers:
-                #self.send_model()
                 t.append(Thread(target = self.send_model, args = ()))
             for thread in t:
                 thread.start()
@@ -110,21 +102,21 @@ class Node:
             
         else:
             self.out_connection[to_node] = ns_helper.act_as_client()
-            self.local_model = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)  # Reads model object
-        # self.local_model = self.in_connection.recv_string()
-        return from_node
+            wt = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)
+            self.local_model.set_weights(wt.tolist())  # Reads model object
+    
+            return from_node
 
     def final_recv(self, to_node, from_node):
         self.out_connection[to_node] = ns_helper.act_as_client()
-        self.local_model = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)
+        wt  = ns_helper.recv_zipped_pickle(self.out_connection[to_node], from_node)
+        self.local_model.set_weights(wt.tolist())
 
     def training_step(self, step):
         # local model training
-        #self.establish_connection()
+        
         build_flag = True if step == 1 else False
         self.local_model = training.local_training(self.node_id, self.local_model, build_flag)
-        # self.local_model = {"from": self.node_id}  # for debugging
-        # self.save_model()
 
     def inference_step(self):
         inference.eval_on_test_set(self.local_model)
@@ -134,6 +126,7 @@ def main():
     context = zmq.Context()  # We should only have 1 context which creates any number of sockets
     ops = yaml.safe_load(open("./config.yml", "r"))
     server_node = ops["server"]
+    epochs = ops["epochs"]
     node_id = os.environ["ORIGIN"]
     peers_list = ast.literal_eval(os.environ["PEERS"])
     this_node = Node(node_id, peers_list, server=(server_node == node_id))
@@ -144,8 +137,12 @@ def main():
     
     Central = ops['central'] 
     if Central:
+        total_rounds = ops['total_rounds']
+    if Central:
         for i in range(1, total_rounds + 1):
+            print(f"### STARTING ROUND {i}")
             if this_node.node_id == server_node:
+                start = time.time()
                 while True:
                     try:
                         rcvd_from = this_node.receive_model(server_node, None)
@@ -154,8 +151,11 @@ def main():
                         pass
                 this_node.save_model()
                 this_node.inference_step()
+                print(f"THIS ROUND TOOK : {time.time() - start}")
             else:
                 this_node.training_step(i)
+                for _ in range(epochs - 1):
+                    this_node.training_step(2)
                 this_node.send_model()
                 while True:
                     try:
@@ -194,9 +194,6 @@ def main():
 
                     # Logging iteration and prev_node for audit
                     this_node.local_history.append({"iteration":i, "prev_node":from_node})
-
-    # this_node.print_node_details()
-
 
 
 if __name__ == "__main__":

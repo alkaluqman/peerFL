@@ -16,19 +16,20 @@ def get_ip(node_id):
 
 def send_zipped_pickle(s, data, protocol = pickle.HIGHEST_PROTOCOL):
     
-    print("#################SANE################## : 1000000000000000")
+    print("### ATTEMPTING CONNECTION")
     c, addr = s.accept()
-    print("#################SANE################## : 2000000000000000")
+    print(f"### CONNECTED TO {addr}")
     #print(sys.getsizeof(data))
     #data = np.arange(1000000)
     p = pickle.dumps(data, protocol)
-    print(sys.getsizeof(p))
+    #print(sys.getsizeof(p))
     #z = zlib.compress(p)
     
-    print("#################SANE################## : 3000000000000000")
+    print(f"### ATTEMPTING DATA SEND of {sys.getsizeof(p)}")
     c.send(p)
-    print("#################SANE################## : 4000000000000000")
+    print("### DATA SENT SUCCESSFULLY")
     c.close()
+    #s.close()
     
 
 def act_as_client():
@@ -42,9 +43,10 @@ def recv_zipped_pickle(s, from_node ,size = 1024):
     i= 0
     #bytes_recv = 0
     ### Recieving loop
-    flag = True
+    done = False
     tot = 0
     #time.sleep(60)
+    print("### RECEIVING")
     while True:
         #print(f"recv: {i}")
         size = 1024*1024
@@ -58,15 +60,16 @@ def recv_zipped_pickle(s, from_node ,size = 1024):
             #size = min(size, tmp)
             msg.append(data)
             tot += float(b-a)
-
         else:
             break
     print(tot)
     print(float(tot/i))
     msg =b''.join(msg)
     print(sys.getsizeof(msg))
+    print("### RECEIVED")
     
     print(i)
+    #s.close()
     #p = zlib.decompress(msg)
     return pickle.loads(msg)
 

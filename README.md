@@ -1,4 +1,4 @@
 # Running ns3 code
 
-Please run the docker file(DockerFile) in the root of this clone repo. and save the image as ns_base
+Everything can be executed form the ``` main.py ``` the only requirement is to give it the ns3 home path through command line input and every configurational thing is managed though ``` config.yml ```.  
 
