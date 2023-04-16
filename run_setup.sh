@@ -2,7 +2,7 @@
 
 #Docker Installation
 sudo apt-get update
-sudo apt-get install \
+sudo apt-get install -y \
     ca-certificates \
     curl \
     gnupg
@@ -10,6 +10,10 @@ sudo apt-get install \
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)"  -o /usr/local/bin/docker-compose
+sudo mv /usr/local/bin/docker-compose /usr/bin/docker-compose
+sudo chmod +x /usr/bin/docker-compose
 
 echo \
   "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
@@ -19,6 +23,10 @@ echo \
 sudo apt-get update
 
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+#Install Python
+sudo apt-get install -y python3-pip
+sudo apt-get install -y python-is-python3
 
 #NS3 Installation
 sudo apt-get update
@@ -31,8 +39,15 @@ sudo apt-get install -y gir1.2-goocanvas-2.0 python-gi python-gi-cairo python3-g
 sudo apt-get install -y qt5-default
 sudo apt-get install -y castxml
 sudo apt-get install -y iputils-ping
+sudo apt-get install -y bridge-utils 
+sudo apt-get install -y uml-utilities
+sudo apt-get install -y net-tools
+pip install pygccxml
+pip install cxxfilt
 
 git clone https://gitlab.com/nsnam/bake
+
+cd ./bake
 
 ./bake.py configure -e ns-3.32
 ./bake.py download

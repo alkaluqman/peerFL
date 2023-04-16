@@ -37,7 +37,8 @@ def func(ops):
         output_file.write("                    devices:\n")
         output_file.write("                    - driver: nvidia\n")
         output_file.write("                      count: 1\n")
-        output_file.write("                      capabilities: [gpu]\n")
+        if ops["gpu"]:
+            output_file.write("                      capabilities: [gpu]\n")
 
 
 
