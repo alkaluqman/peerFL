@@ -64,17 +64,17 @@ def create(numNodes, names, baseName):
     return
     
 
-def ns3(numNodes, baseName, ns3Path):
+def ns3(numNodes, baseName, ns3Path, csma):
     totalTime = (100 * 60) * numNodes
 
     print("######################################################")
 
-    print("Starting ns3 network")
+    print(f'Starting ns3 {"csma-virtual" if csma else "wifi-virtual"} network')
 
     print("######################################################")
 
     subprocess.Popen(
-        f"cd {ns3Path} && sudo ./waf --pyrun \"%s --numNodes=%s --totalTime=%s --baseName=%s\"" % (os.path.join(os.getcwd(), "ns3/tap-wifi-virtual-machine.py"), str(numNodes), str(totalTime), baseName)
+        f"cd {ns3Path} && sudo ./waf --pyrun \"%s --numNodes=%s --totalTime=%s --baseName=%s\"" % (os.path.join(os.getcwd(), "ns3/tap-csma-virtual-machine.py" if csma else "ns3/tap-wifi-virtual-machine.py"), str(numNodes), str(totalTime), baseName)
         ,shell = True
         )
 
@@ -188,6 +188,7 @@ def main():
     parser.add_argument("-bn", "--baseName", type = str, action="store", default="Node")
     parser.add_argument("-p", "--path", type=str, default="config.yml", help="No need to chnage this by default.")
     parser.add_argument("-nsp", "--ns3Path", type=str, default="/home/sasuke/repos/bake/source/ns-3.32/", help="Ns3 home directory path.")
+    parser.add_argument("--csma", "-csma", type=lambda x: (str(x).lower() == 'true'), default=False)
     args = parser.parse_args()
 
 
@@ -211,7 +212,7 @@ def main():
     if operation == "create":
         create(numNodes, names, baseName)
     elif operation == "ns3":
-        ns3(numNodes, baseName, args.ns3Path)
+        ns3(numNodes, baseName, args.ns3Path, args.csma)
     elif operation == "emulate":
         emulate(numNodes, lastNode, central)
     elif operation == "destroy":

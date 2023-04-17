@@ -66,8 +66,15 @@ nodes.Create (2)
 # channel can be set through the command-line parser.
 #
 csma = ns.csma.CsmaHelper()
-csma.SetChannelAttribute("DataRate", ns.core.StringValue ("100Mbps"))
+csma.SetChannelAttribute("DataRate", ns.core.StringValue ("1Mbps"))
 devices = csma.Install(nodes)
+
+stack = ns.internet.InternetStackHelper()
+stack.Install(nodes)
+address = ns.internet.Ipv4AddressHelper()
+address.SetBase(ns.network.Ipv4Address("10.12.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+Interfaces = address.Assign(devices)
+ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
 
 #
 # Use the TapBridgeHelper to connect to the pre-configured tap devices for 
@@ -91,7 +98,7 @@ for i in range(numNodes):
 #
 # Run the simulation for ten minutes to give the user time to play around
 #
-ns.core.Simulator.Stop (ns.core.Seconds (600))
+ns.core.Simulator.Stop (ns.core.Seconds (6000))
 ns.core.Simulator.Run(signal_check_frequency = -1)
 ns.core.Simulator.Destroy()
 

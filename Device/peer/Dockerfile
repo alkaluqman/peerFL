@@ -13,6 +13,7 @@ RUN apt-get update
 RUN apt-get install -y iproute2
 RUN apt-get install -y iputils-ping
 RUN apt-get -y install net-tools
+RUN apt-get -y install ncat
 RUN apt-get install -y iperf
 
 EXPOSE 5555-5565
