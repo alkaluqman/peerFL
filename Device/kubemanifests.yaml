@@ -1,0 +1,736 @@
+apiVersion: v1
+items:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-0
+      name: disk-0
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-0
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-1
+      name: disk-1
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-1
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-2
+      name: disk-2
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-2
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-3
+      name: disk-3
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-3
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-4
+      name: disk-4
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-4
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-5
+      name: disk-5
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-5
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-6
+      name: disk-6
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-6
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-7
+      name: disk-7
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-7
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-controller
+      name: disk-controller
+    spec:
+      ports:
+        - name: "5555"
+          port: 5555
+          targetPort: 5555
+      selector:
+        io.kompose.service: disk-controller
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-0
+      name: disk-0
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-0
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-0
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_0
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-0
+              name: disk_0
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-0-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-0-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_0
+#              persistentVolumeClaim:
+#                claimName: disk-0-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-0-claim0
+      name: disk-0-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-1
+      name: disk-1
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-1
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-1
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_1
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-1
+              name: disk_1
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-1-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-1-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_1
+#              persistentVolumeClaim:
+#                claimName: disk-1-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-1-claim0
+      name: disk-1-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-2
+      name: disk-2
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-2
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-2
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_2
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-2
+              name: disk_2
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-2-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-2-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_2
+#              persistentVolumeClaim:
+#                claimName: disk-2-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-2-claim0
+      name: disk-2-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-3
+      name: disk-3
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-3
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-3
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_3
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-3
+              name: disk_3
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-3-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-3-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_3
+#              persistentVolumeClaim:
+#                claimName: disk-3-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-3-claim0
+      name: disk-3-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-4
+      name: disk-4
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-4
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-4
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_4
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-4
+              name: disk_4
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-4-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-4-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_4
+#              persistentVolumeClaim:
+#                claimName: disk-4-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-4-claim0
+      name: disk-4-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-5
+      name: disk-5
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-5
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-5
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_5
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-5
+              name: disk_5
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-5-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-5-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_5
+#              persistentVolumeClaim:
+#                claimName: disk-5-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-5-claim0
+      name: disk-5-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-6
+      name: disk-6
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-6
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-6
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_6
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-6
+              name: disk_6
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-6-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-6-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_6
+#              persistentVolumeClaim:
+#                claimName: disk-6-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-6-claim0
+      name: disk-6-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-7
+      name: disk-7
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-7
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-7
+        spec:
+          containers:
+            - env:
+                - name: ORIGIN
+                  value: disk_7
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-7
+              name: disk_7
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-7-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-7-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_7
+#              persistentVolumeClaim:
+#                claimName: disk-7-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-7-claim0
+      name: disk-7-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-controller
+      name: disk-controller
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          io.kompose.service: disk-controller
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          annotations:
+            kompose.cmd: kompose convert -f docker-compose.yml -o kubemanifests.yaml
+            kompose.version: 1.26.0 (40646f47)
+          creationTimestamp: null
+          labels:
+            io.kompose.service: disk-controller
+        spec:
+          containers:
+            - env:
+                - name: NUM_DISKS
+                  value: "8"
+                - name: ORIGIN
+                  value: disk_controller
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              image: disk-controller
+              name: disk_controller
+              ports:
+                - containerPort: 5555
+              resources: {}
+              volumeMounts:
+                - mountPath: /usr/thisdocker/
+                  name: disk-controller-claim0
+          restartPolicy: Always
+          volumes:
+            - name: disk-controller-claim0
+              hostPath:
+                path: /home/alka/Documents/p2p_raid6/data/disk_controller
+#              persistentVolumeClaim:
+#                claimName: disk-controller-claim0
+    status: {}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: disk-controller-claim0
+      name: disk-controller-claim0
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+    status: {}
+kind: List
+metadata: {}
+

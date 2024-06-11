@@ -1,0 +1,84 @@
+version: '2'
+services:
+    disk_controller:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_controller
+            - NUM_DISKS=8
+        volumes:
+            - ./data/disk_controller:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_0:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_0
+        volumes:
+            - ./data/disk_0:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_1:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_1
+        volumes:
+            - ./data/disk_1:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_2:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_2
+        volumes:
+            - ./data/disk_2:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_3:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_3
+        volumes:
+            - ./data/disk_3:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_4:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_4
+        volumes:
+            - ./data/disk_4:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_5:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_5
+        volumes:
+            - ./data/disk_5:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_6:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_6
+        volumes:
+            - ./data/disk_6:/usr/thisdocker/:rw
+        ports:
+            - "5555"
+    disk_7:
+        build: ./raid6/
+        environment:
+            - PYTHONUNBUFFERED=1
+            - ORIGIN=disk_7
+        volumes:
+            - ./data/disk_7:/usr/thisdocker/:rw
+        ports:
+            - "5555"
